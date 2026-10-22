@@ -9,6 +9,7 @@ import CardModal from './components/CardModal.jsx';
 import ArchiveDrawer from './components/ArchiveDrawer.jsx';
 import { CardFace } from './components/CardTile.jsx';
 import Toast from './components/Toast.jsx';
+import BackgroundDialog from './components/BackgroundDialog.jsx';
 import { DialogHost, promptDialog } from './components/Dialog.jsx';
 
 const store = {
@@ -51,6 +52,17 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
 
   const sortedBoards = useMemo(() => [...(boards || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [boards]);
   const board = sortedBoards.find((b) => b.id === boardIdPref) || sortedBoards[0] || null;
+
+  // Background for this board, falling back to the all-boards default.
+  const [bgDocs, setBgDocs] = useState([]);
+  const [bgOpen, setBgOpen] = useState(false);
+  useEffect(
+    () => backend.subscribe('backgrounds', [['key', 'in', [board?.id || '-', 'default']]], setBgDocs),
+    [backend, board?.id],
+  );
+  const boardBg = bgDocs.find((d) => d.key === board?.id) || null;
+  const defaultBg = bgDocs.find((d) => d.key === 'default') || null;
+  const bg = boardBg || defaultBg;
   const selectBoard = (id) => { setBoardIdPref(id); store.set('planner.board', id); };
   const toggleCal = () => setCalOpen((v) => { store.set('planner.calendar', !v); return !v; });
 
@@ -241,7 +253,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
       autoScroll={{ threshold: { x: 0, y: 0.12 }, canScroll: (el) => !el.classList?.contains('board') }}
       measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
     >
-      <div className={`app ${drag ? 'is-dragging' : ''}`}>
+      <div className={`app ${drag ? 'is-dragging' : ''} ${bg ? 'has-bg' : ''}`} style={bg ? { backgroundImage: `url(${bg.data})` } : undefined}>
         <Header
           boards={sortedBoards}
           board={board}
@@ -252,6 +264,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           calOpen={calOpen}
           onToggleCal={toggleCal}
           onOpenArchive={() => setArchiveOpen(true)}
+          onOpenBackground={() => setBgOpen(true)}
           user={user}
           onSignOut={onSignOut}
           demo={demo}
@@ -330,6 +343,16 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           cards={cards}
           actions={actions}
           onClose={() => setArchiveOpen(false)}
+        />
+      )}
+      {bgOpen && board && (
+        <BackgroundDialog
+          board={board}
+          boardBg={boardBg}
+          defaultBg={defaultBg}
+          actions={actions}
+          onClose={() => setBgOpen(false)}
+          showToast={showToast}
         />
       )}
       <DialogHost />

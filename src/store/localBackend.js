@@ -1,6 +1,6 @@
 // Demo backend: same interface as Firestore, data kept in this browser only.
 const KEY = 'planner-demo-v1';
-const COLLS = ['boards', 'lists', 'cards', 'blocks'];
+const COLLS = ['boards', 'lists', 'cards', 'blocks', 'backgrounds'];
 
 function load() {
   try {
@@ -26,6 +26,7 @@ export function createLocalBackend(seed) {
     if (seed) seed(db);
     save(db);
   }
+  for (const c of COLLS) db[c] = db[c] || {};
   const subs = new Set();
   const emit = () => {
     for (const s of subs) {

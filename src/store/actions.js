@@ -160,6 +160,15 @@ export function createActions(be) {
     updateBlock: (id, patch) => commit([upd('blocks', id, patch)]),
     deleteBlock: (id) => commit([del('blocks', id)]),
 
+    // ---------- backgrounds ----------
+    // key is a board id, or 'default' for all boards without their own.
+    setBackground(key, data, alsoClearBoardId) {
+      const ops = [set('backgrounds', key, { key, data, updatedAt: Date.now() })];
+      if (alsoClearBoardId) ops.push(del('backgrounds', alsoClearBoardId));
+      return commit(ops);
+    },
+    removeBackground: (key) => commit([del('backgrounds', key)]),
+
     commitRaw: commit,
   };
 }
