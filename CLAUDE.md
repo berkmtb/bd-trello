@@ -38,6 +38,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 17. **Reorder lists by dragging** their header (drop line shows where it lands; plain click on the title still renames). `actions.moveListTo`; the list menu's Move left/right still work.
 18. **Data safety**: Settings → Your data shows the last backup time and a *Back up all boards* button (`settings/prefs.lastBackupAt`); the Settings button gets a yellow dot if there's no backup or the last one is over 7 days old.
 19. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
+20. **Small branding choices**: page/tab title is "bd tasks" (`index.html`); the top-bar user avatar (initials) is solid black, no outline (`.avatar` in `styles.css`).
 
 ## Architecture
 - React 18 + Vite 8, `@dnd-kit/core`, Tiptap v3 (StarterKit, TaskList, TaskItem, Placeholder), Firebase v13 (Auth + Firestore with persistent local cache).
