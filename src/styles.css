@@ -90,7 +90,7 @@ kbd {
 .top-btn:hover { background: rgba(255, 255, 255, 0.22); }
 .top-btn.on { background: #fff; color: #1d2125; }
 .avatar {
-  width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35);
+  width: 32px; height: 32px; border-radius: 50%; border: 0;
   background: #000; color: #fff; font-weight: 700; font-size: 13px;
 }
 
