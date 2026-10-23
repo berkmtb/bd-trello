@@ -1,63 +1,102 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { DEFAULT_BLOCK_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
+import { DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
 
-const SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
+const BLOCK_SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
+const ADD_LIST_SWATCHES = [
+  { name: 'Yellow (default)', hex: DEFAULT_ADD_LIST_COLOR },
+  { name: 'Light blue', hex: DEFAULT_BLOCK_COLOR },
+  { name: 'White', hex: '#f4f5f7' },
+  ...LIST_COLORS,
+];
 
-export default function SettingsDialog({ settings, defaultBlockColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
-  const [backingUp, setBackingUp] = useState(false);
-  const [draft, setDraft] = useState(defaultBlockColor);   // live value while using the color picker
+/** One color preference: live preview, swatches, custom picker and reset. Saves as you pick. */
+function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, preview }) {
+  const [draft, setDraft] = useState(value);
   const timer = useRef(null);
-  useEffect(() => setDraft(defaultBlockColor), [defaultBlockColor]);
+  useEffect(() => setDraft(value), [value]);
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  const shown = draft || defaultValue;
+  const choose = (hex) => { clearTimeout(timer.current); setDraft(hex); onSave(hex); };
+  const pickCustom = (hex) => {
+    setDraft(hex);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSave(hex), 400);   // don't write on every drag of the picker
+  };
+
+  return (
+    <div className="color-setting">
+      <h4>{title}</h4>
+      <p className="hint">{hint}</p>
+      {preview(shown)}
+      <div className="settings-swatches">
+        {swatches.map((c) => (
+          <button
+            key={c.hex}
+            type="button"
+            className={`swatch ${shown.toLowerCase() === c.hex ? 'current' : ''}`}
+            style={{ background: c.hex }}
+            title={c.name}
+            aria-label={c.name}
+            onClick={() => choose(c.hex)}
+          />
+        ))}
+      </div>
+      <div className="settings-custom">
+        <label htmlFor={id}>Custom</label>
+        <input id={id} type="color" value={shown} onChange={(e) => pickCustom(e.target.value)} />
+        <code>{shown.toLowerCase()}</code>
+        {shown.toLowerCase() !== defaultValue && <button className="link-btn" onClick={() => choose(defaultValue)}>Reset to default</button>}
+      </div>
+    </div>
+  );
+}
+
+export default function SettingsDialog({ settings, defaultBlockColor, addListColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
+  const [backingUp, setBackingUp] = useState(false);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const save = (hex) => actions.saveSettings(settings, { defaultBlockColor: hex });
-  const choose = (hex) => { clearTimeout(timer.current); setDraft(hex); save(hex); };
-  const pickCustom = (hex) => {
-    setDraft(hex);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => save(hex), 400);   // don't write on every drag of the picker
-  };
-  const shown = draft || DEFAULT_BLOCK_COLOR;
-  const isDefault = shown.toLowerCase() === DEFAULT_BLOCK_COLOR;
-
   return (
     <div className="modal-backdrop dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog settings-dialog" role="dialog" aria-label="Settings">
         <h2>Settings</h2>
 
-        <h3>Default time block color</h3>
-        <p className="hint">Used for calendar blocks whose list has no color of its own. Lists can still override it from their ⋯ menu.</p>
+        <h3>Customize</h3>
 
-        <div className="settings-preview" style={{ background: shown, color: textOn(shown) }}>
-          <span className="t">Sample task</span>
-          <span className="s">9:00 AM – 9:30 AM</span>
-        </div>
+        <ColorSetting
+          id="custom-block-color"
+          title="Default time block color"
+          hint="Used for calendar blocks whose list has no color of its own. Lists can still override it from their ⋯ menu."
+          value={defaultBlockColor}
+          defaultValue={DEFAULT_BLOCK_COLOR}
+          swatches={BLOCK_SWATCHES}
+          onSave={(hex) => actions.saveSettings(settings, { defaultBlockColor: hex })}
+          preview={(c) => (
+            <div className="settings-preview" style={{ background: c, color: textOn(c) }}>
+              <span className="t">Sample task</span>
+              <span className="s">9:00 AM – 9:30 AM</span>
+            </div>
+          )}
+        />
 
-        <div className="settings-swatches">
-          {SWATCHES.map((c) => (
-            <button
-              key={c.hex}
-              type="button"
-              className={`swatch ${shown.toLowerCase() === c.hex ? 'current' : ''}`}
-              style={{ background: c.hex }}
-              title={c.name}
-              aria-label={c.name}
-              onClick={() => choose(c.hex)}
-            />
-          ))}
-        </div>
-
-        <div className="settings-custom">
-          <label htmlFor="custom-block-color">Custom</label>
-          <input id="custom-block-color" type="color" value={shown} onChange={(e) => pickCustom(e.target.value)} />
-          <code>{shown.toLowerCase()}</code>
-          {!isDefault && <button className="link-btn" onClick={() => choose(DEFAULT_BLOCK_COLOR)}>Reset to default</button>}
-        </div>
+        <ColorSetting
+          id="custom-add-list-color"
+          title="“Add another list” button color"
+          hint="The button at the end of your board's lists."
+          value={addListColor}
+          defaultValue={DEFAULT_ADD_LIST_COLOR}
+          swatches={ADD_LIST_SWATCHES}
+          onSave={(hex) => actions.saveSettings(settings, { addListColor: hex })}
+          preview={(c) => (
+            <div className="settings-preview add-list-preview" style={{ background: c, color: textOn(c) }}>
+              <span className="t">+ Add another list</span>
+            </div>
+          )}
+        />
 
         <h3>Your data</h3>
         <p className="hint">

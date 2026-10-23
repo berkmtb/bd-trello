@@ -20,6 +20,8 @@ export const LIST_COLORS = [
 ];
 /** Default time-block color (Settings can override it). */
 export const DEFAULT_BLOCK_COLOR = '#aac7f8';
+/** Default color of the "Add another list" button (Settings can override it). */
+export const DEFAULT_ADD_LIST_COLOR = '#f2c200';
 /** A list's color, or the default block color when none was chosen. */
 export const listColor = (list, fallback = DEFAULT_BLOCK_COLOR) => list?.color || fallback;
 /** Dark navy or white text, whichever reads better on this fill. */

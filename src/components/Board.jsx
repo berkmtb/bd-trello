@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { sortCards, LIST_COLORS } from '../lib/core.js';
+import { sortCards, LIST_COLORS, textOn } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
+export default function Board({ board, lists, defaultColor, addListColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -76,7 +76,7 @@ export default function Board({ board, lists, defaultColor, cards, blocks, date,
             </div>
           </div>
         ) : (
-          <button className="add-list-btn" onClick={() => setAdding(true)}><Icon name="plus" /> Add another list</button>
+          <button className="add-list-btn" style={{ background: addListColor, color: textOn(addListColor) }} onClick={() => setAdding(true)}><Icon name="plus" /> Add another list</button>
         )}
       </div>
     </div>

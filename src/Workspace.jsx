@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { createActions } from './store/actions.js';
-import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR } from './lib/core.js';
+import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR, DEFAULT_ADD_LIST_COLOR } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
@@ -65,6 +65,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   useEffect(() => backend.subscribe('settings', [], setSettingsDocs), [backend]);
   const settings = settingsDocs.find((d) => d.id === 'prefs') || {};
   const defaultBlockColor = settings.defaultBlockColor || DEFAULT_BLOCK_COLOR;
+  const addListColor = settings.addListColor || DEFAULT_ADD_LIST_COLOR;
 
   // Full backup (all boards, archived cards included) as one Trello-format JSON file.
   const backupAll = async () => {
@@ -328,6 +329,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               board={board}
               lists={boardLists}
               defaultColor={defaultBlockColor}
+              addListColor={addListColor}
               cards={cards}
               blocks={blocks}
               date={date}
@@ -418,6 +420,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
         <SettingsDialog
           settings={settings}
           defaultBlockColor={defaultBlockColor}
+          addListColor={addListColor}
           actions={actions}
           boardCount={sortedBoards.length}
           backupStale={backupStale}

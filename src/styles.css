@@ -160,8 +160,8 @@ kbd {
 }
 .add-card-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-strong); }
 .add-list { background: transparent; box-shadow: none; }
-.add-list .add-list-btn { background: #acc7f6; color: #092f6d; font-weight: 600; margin: 0; padding: 12px; width: 100%; border-radius: 14px; }
-.add-list .add-list-btn:hover { background: #bcd2f8; }
+.add-list .add-list-btn { background: #f2c200; color: #092f6d; font-weight: 600; margin: 0; padding: 12px; width: 100%; border-radius: 14px; }
+.add-list .add-list-btn:hover { filter: brightness(1.08); }
 .add-list .composer { padding: 8px; background: var(--list); border-radius: 14px; }
 
 .composer textarea, .composer input {
@@ -477,3 +477,8 @@ kbd {
 .backup-row .b-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .top-btn { position: relative; }
 .notice-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: #f2c200; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25); }
+
+/* ---------- settings: customize ---------- */
+.settings-dialog h4 { margin: 16px 0 2px; font-size: 13px; color: var(--text-strong); }
+.color-setting + .color-setting { margin-top: 6px; padding-top: 4px; border-top: 1px solid var(--line); }
+.settings-preview.add-list-preview { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 42px; border-radius: 14px; padding: 0 14px; }
