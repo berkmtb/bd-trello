@@ -136,7 +136,7 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
         </div>
         <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>
-        <button className="top-btn" onClick={onOpenSettings}><Icon name="gear" /> Settings</button>
+        <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /> Settings</button>
         {user && (
           <div className="menu-wrap">
             <button className="avatar" title={user.email} onClick={(e) => { e.stopPropagation(); setUserMenu((v) => !v); }}>{initials}</button>
