@@ -109,9 +109,6 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
           </div>
         </div>
       </div>
-      {blocks.length === 0 && !drag && (
-        <div className="cal-hint">Drag a card here to schedule it.</div>
-      )}
     </aside>
   );
 }
