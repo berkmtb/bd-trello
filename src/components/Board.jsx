@@ -3,9 +3,9 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { sortCards, LIST_COLORS, textOn } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
-import { confirmDialog } from './Dialog.jsx';
+import { confirmDialog, promptDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, focusListId, onFocus }) {
+export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, focusListId, onFocus, phone }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -56,8 +56,40 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
   });
   if (draggingListId && drag.listIndex != null && drag.listIndex >= k) listItems.push(<div key="__list-drop" className="list-drop-line" />);
 
-  const focusList = focusListId ? lists.find((l) => l.id === focusListId) : null;
+  // Phone: always one list at a time (the focused list, or the first one), with swipe to switch.
+  const focusList = (focusListId && lists.find((l) => l.id === focusListId)) || (phone ? lists[0] : null);
+  const touch = useRef(null);
+  const addListPrompt = async () => {
+    const n = await promptDialog('New list', '', { placeholder: 'List name', confirmLabel: 'Add list' });
+    if (n && n.trim()) actions.createList(board.id, n.trim(), lists);
+  };
+  const swipe = {
+    onTouchStart: (e) => { const t = e.touches[0]; touch.current = { x: t.clientX, y: t.clientY, t: Date.now() }; },
+    onTouchEnd: (e) => {
+      const s = touch.current; touch.current = null;
+      if (!s || drag || !focusList) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - s.x; const dy = t.clientY - s.y;
+      if (Math.abs(dx) < 70 || Math.abs(dy) > 45 || Date.now() - s.t > 600) return;
+      if (e.target.closest?.('input, textarea, .tiptap')) return;
+      const i = lists.findIndex((l) => l.id === focusList.id);
+      const next = lists[i + (dx < 0 ? 1 : -1)];
+      if (next) onFocus(next.id);
+    },
+  };
+  if (phone && !lists.length) {
+    return (
+      <div className="board-wrap">
+        <div className="phone-empty">
+          <h2>No lists yet</h2>
+          <p>Add your first list to start adding tasks.</p>
+          <button className="btn primary" onClick={addListPrompt}>Add a list</button>
+        </div>
+      </div>
+    );
+  }
   if (focusList) {
+    const fi = lists.findIndex((l) => l.id === focusList.id);
     return (
       <div className="board-wrap">
         <div className="focus-bar">
@@ -65,19 +97,21 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
             {lists.map((l) => (
               <button key={l.id} className={`focus-chip ${l.id === focusList.id ? 'on' : ''}`} onClick={() => onFocus(l.id)}>{l.name}</button>
             ))}
+            {phone && <button className="focus-chip add" onClick={addListPrompt} aria-label="Add list">+ List</button>}
           </div>
-          <button className="top-btn" onClick={() => onFocus(null)}>Show all lists</button>
+          {!phone && <button className="top-btn" onClick={() => onFocus(null)}>Show all lists</button>}
         </div>
-        <div className="board focus-mode">
+        <div className="board focus-mode" {...swipe}>
           <ListColumn
             key={focusList.id}
             focused
+            phone={phone}
             onFocus={onFocus}
             defaultColor={defaultColor}
             newCardColor={newCardColor}
             list={focusList}
-            isFirst
-            isLast
+            isFirst={fi === 0}
+            isLast={fi === lists.length - 1}
             allLists={lists}
             cards={cards}
             blockByCard={blockByCard}
@@ -126,7 +160,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
   );
 }
 
-function ListColumn({ focused, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
+function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -203,7 +237,7 @@ function ListColumn({ focused, onFocus, list, defaultColor, newCardColor, isFirs
           {menu && (
             <div className="menu" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => { setMenu(false); setComposer(true); }}>Add card</button>
-              <button onClick={() => { setMenu(false); onFocus(focused ? null : list.id); }}>{focused ? 'Show all lists' : 'Focus on this list'}</button>
+              {!phone && <button onClick={() => { setMenu(false); onFocus(focused ? null : list.id); }}>{focused ? 'Show all lists' : 'Focus on this list'}</button>}
               <button onClick={() => { setMenu(false); setEditingName(true); }}>Rename list</button>
               <button disabled={isFirst} onClick={() => { setMenu(false); actions.moveList(list, -1, allLists); }}>Move list left</button>
               <button disabled={isLast} onClick={() => { setMenu(false); actions.moveList(list, 1, allLists); }}>Move list right</button>

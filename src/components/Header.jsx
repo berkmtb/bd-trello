@@ -17,7 +17,7 @@ function useDropdown() {
   return [open, setOpen];
 }
 
-export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenSettings, onBackupAll, backupStale, user, onSignOut, demo, showToast }) {
+export default function Header({ phone, boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenSettings, onBackupAll, backupStale, user, onSignOut, demo, showToast }) {
   const [boardMenu, setBoardMenu] = useDropdown();
   const [backupMenu, setBackupMenu] = useDropdown();
   const [userMenu, setUserMenu] = useDropdown();
@@ -114,9 +114,9 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
       </div>
 
       <div className="topbar-right">
-        {board && <button className="top-btn" onClick={onOpenArchive}><Icon name="archive" /> Archived</button>}
+        {board && <button className="top-btn" onClick={onOpenArchive}><Icon name="archive" /><span className="lbl"> Archived</span></button>}
         <div className="menu-wrap">
-          <button className="top-btn" onClick={(e) => { e.stopPropagation(); setBackupMenu((v) => !v); }}><Icon name="download" /> Backup</button>
+          <button className="top-btn" onClick={(e) => { e.stopPropagation(); setBackupMenu((v) => !v); }}><Icon name="download" /><span className="lbl"> Backup</span></button>
           {backupMenu && (
             <div className="menu right wide" onClick={(e) => e.stopPropagation()}>
               {board && <button onClick={backupBoard}>Back up this board (.json)</button>}
@@ -128,8 +128,8 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
           )}
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
         </div>
-        <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>
-        <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /> Settings{backupStale && <span className="notice-dot" title="Time for a backup" />}</button>
+        {!phone && <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>}
+        <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /><span className="lbl"> Settings</span>{backupStale && <span className="notice-dot" title="Time for a backup" />}</button>
         {user && (
           <div className="menu-wrap">
             <button className="avatar" title={user.email} onClick={(e) => { e.stopPropagation(); setUserMenu((v) => !v); }}>{initials}</button>

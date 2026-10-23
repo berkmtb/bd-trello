@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragOverlay, MeasuringStrategy, MouseSensor, TouchSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
+import { useIsPhone } from './lib/useIsPhone.js';
 import { createActions } from './store/actions.js';
 import { rank, sortCards, todayKey } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
@@ -153,7 +154,12 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   }, [actions]);
 
   // ---------- drag and drop ----------
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  // Mouse drags after a few pixels; touch needs a press-and-hold so swiping still scrolls/changes lists.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
+  const phone = useIsPhone();
   const [drag, setDrag] = useState(null);
   const dragInfo = useRef(null);
   const lastDragEnd = useRef(0);
@@ -315,6 +321,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     >
       <div className={`app ${drag ? 'is-dragging' : ''} ${bg ? 'has-bg' : ''}`} style={bg ? { backgroundImage: `url(${bg.data})` } : undefined}>
         <Header
+          phone={phone}
           boards={sortedBoards}
           board={board}
           lists={lists}
@@ -350,6 +357,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               recentDrag={recentDrag}
               hoveredRef={hoveredRef}
               onOpenCard={openCardSafe}
+              phone={phone}
               focusListId={focusMap[board.id] || null}
               onFocus={setFocus}
             />
@@ -363,7 +371,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               }}>Create a board</button>
             </div>
           )}
-          {calOpen && (
+          {calOpen && !phone && (
             <Calendar
               date={date}
               setDate={setDate}
