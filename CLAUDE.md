@@ -34,7 +34,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 13. Native `alert/confirm/prompt` replaced with in-app dialogs (`Dialog.jsx`) except two rare error alerts in `actions.js`.
 14. No attachments (explicitly not needed).
 15. **Calendar block colors**: blocks are filled solid with their **list's color** (`lists.color`, set from the list ⋯ menu → Calendar color; palette `LIST_COLORS` avoids red/orange/yellow). Lists with no color use the **default block color**, chosen in **Settings** (top bar sliders button), default `#aac7f8` (light blue). Text switches between white and navy via `textOn()` for contrast.
-16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`); it also lists the keyboard shortcuts (formerly a hint in the top bar). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
+16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`, `addListColor`, `lastBackupAt`); it has a **Customize** section (default time block color; "Add another list" button color, default yellow `#f2c200` = `DEFAULT_ADD_LIST_COLOR`, same as the backup notice dot) and also lists the keyboard shortcuts (formerly a hint in the top bar). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
 17. **Reorder lists by dragging** their header (drop line shows where it lands; plain click on the title still renames). `actions.moveListTo`; the list menu's Move left/right still work.
 18. **Data safety**: Settings → Your data shows the last backup time and a *Back up all boards* button (`settings/prefs.lastBackupAt`); the Settings button gets a yellow dot if there's no backup or the last one is over 7 days old.
 19. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
@@ -47,7 +47,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
   - `cards`: boardId, listId, title, desc (HTML), priority 0–3, order (float, meaningful only within its priority band), archived, archivedAt, createdAt, updatedAt
   - `blocks`: cardId, boardId, title (snapshot), date `YYYY-MM-DD`, start (min), duration (min)
   - `lists`: boardId, name, order, color (optional hex; absent = default block color)
-  - `settings`: one doc `prefs` with defaultBlockColor
+  - `settings`: one doc `prefs` with defaultBlockColor, addListColor, lastBackupAt
   - `backgrounds`: id = boardId or `default`; key (same), data (JPEG data URL)
 - Subscriptions: all boards, all lists, cards where archived==false (all boards), blocks for the shown date, backgrounds for current board + default, archived cards only when the drawer is open.
 
