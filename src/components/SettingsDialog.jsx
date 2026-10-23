@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { THEMES } from '../lib/themes.js';
 import { DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, DEFAULT_NEW_CARD_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
 
 const BLOCK_SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
@@ -66,6 +67,31 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
         <h2>Settings</h2>
 
         <h3>Customize</h3>
+
+        <div className="color-setting theme-picker">
+          <h4>Theme</h4>
+          <p className="hint">Picking a theme sets the app colors and resets the three colors below to match it. You can still tweak them afterwards.</p>
+          <div className="theme-grid">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`theme-card ${(settings.theme || 'aurora') === t.id ? 'current' : ''}`}
+                onClick={() => actions.saveSettings(settings, { theme: t.id, ...t.colors })}
+                aria-label={`${t.name} theme`}
+              >
+                <span className="theme-swatch" style={{ background: `linear-gradient(120deg, ${t.vars['--bg-1']}, ${t.vars['--bg-2']} 55%, ${t.vars['--bg-3']})` }}>
+                  <span className="theme-list" style={{ background: t.vars['--list'] }}>
+                    <i style={{ background: t.vars['--card'] }} />
+                    <i style={{ background: t.colors.defaultBlockColor }} />
+                  </span>
+                  <span className="theme-btn" style={{ background: t.colors.addListColor }} />
+                </span>
+                <span className="theme-name">{t.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <ColorSetting
           id="custom-block-color"

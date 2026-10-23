@@ -3,6 +3,7 @@ import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithi
 import { createActions } from './store/actions.js';
 import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR, DEFAULT_ADD_LIST_COLOR, DEFAULT_NEW_CARD_COLOR } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
+import { applyTheme } from './lib/themes.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
 import Calendar, { PX_PER_MIN, DEFAULT_DURATION } from './components/Calendar.jsx';
@@ -67,6 +68,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const defaultBlockColor = settings.defaultBlockColor || DEFAULT_BLOCK_COLOR;
   const addListColor = settings.addListColor || DEFAULT_ADD_LIST_COLOR;
   const newCardColor = settings.newCardColor || DEFAULT_NEW_CARD_COLOR;
+  useEffect(() => { if (settingsDocs.length || settings.theme) applyTheme(settings.theme); }, [settings.theme, settingsDocs.length]);
 
   // Full backup (all boards, archived cards included) as one Trello-format JSON file.
   const backupAll = async () => {
