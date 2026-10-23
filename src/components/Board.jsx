@@ -5,7 +5,7 @@ import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, addListColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
+export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -35,6 +35,7 @@ export default function Board({ board, lists, defaultColor, addListColor, cards,
       <ListColumn
         key={list.id}
         defaultColor={defaultColor}
+        newCardColor={newCardColor}
         list={list}
         isFirst={i === 0}
         isLast={i === lists.length - 1}
@@ -83,7 +84,7 @@ export default function Board({ board, lists, defaultColor, addListColor, cards,
   );
 }
 
-function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
+function ListColumn({ list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -201,7 +202,7 @@ function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, bloc
       <div className="list-body" ref={bodyRef}>
         {items}
         {composer && (
-          <div className="composer">
+          <div className="composer card-composer" style={{ '--new-card-color': newCardColor, '--on-new-card': textOn(newCardColor) }}>
             <textarea
               autoFocus
               rows={2}
@@ -214,7 +215,7 @@ function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, bloc
               }}
             />
             <div className="row">
-              <button className="btn primary" onClick={submitCard}>Add card</button>
+              <button className="btn primary add-card-submit" onClick={submitCard}>Add card</button>
               <button className="icon-btn" onClick={() => { setComposer(false); setTitle(''); }} aria-label="Cancel"><Icon name="x" /></button>
             </div>
           </div>

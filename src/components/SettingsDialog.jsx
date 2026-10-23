@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
+import { DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, DEFAULT_NEW_CARD_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
 
 const BLOCK_SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
 const ADD_LIST_SWATCHES = [
@@ -52,7 +52,7 @@ function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, 
   );
 }
 
-export default function SettingsDialog({ settings, defaultBlockColor, addListColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
+export default function SettingsDialog({ settings, defaultBlockColor, addListColor, newCardColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
   const [backingUp, setBackingUp] = useState(false);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -94,6 +94,22 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
           preview={(c) => (
             <div className="settings-preview add-list-preview" style={{ background: c, color: textOn(c) }}>
               <span className="t">+ Add another list</span>
+            </div>
+          )}
+        />
+
+        <ColorSetting
+          id="custom-new-card-color"
+          title="New card color"
+          hint="The “Add card” button and the outline around the box when you type a new card."
+          value={newCardColor}
+          defaultValue={DEFAULT_NEW_CARD_COLOR}
+          swatches={BLOCK_SWATCHES.map((c, i) => (i === 0 ? { ...c, name: 'Light blue (default)' } : c))}
+          onSave={(hex) => actions.saveSettings(settings, { newCardColor: hex })}
+          preview={(c) => (
+            <div className="settings-preview new-card-preview" style={{ '--c': c }}>
+              <span className="box">Enter a title for this card…</span>
+              <span className="btn-fake" style={{ background: c, color: textOn(c) }}>Add card</span>
             </div>
           )}
         />
