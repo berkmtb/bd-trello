@@ -58,6 +58,14 @@ export default function SettingsDialog({ settings, defaultBlockColor, actions, o
           {!isDefault && <button className="link-btn" onClick={() => choose(DEFAULT_BLOCK_COLOR)}>Reset to default</button>}
         </div>
 
+        <h3>Keyboard shortcuts</h3>
+        <p className="hint">Hover a card (or open it), then press:</p>
+        <ul className="shortcut-list">
+          <li><span className="keys"><kbd>⌥1</kbd><kbd>⌥2</kbd><kbd>⌥3</kbd></span><span>Set priority red / orange / yellow (press again to clear)</span></li>
+          <li><span className="keys"><kbd>⌥0</kbd></span><span>Clear priority</span></li>
+          <li><span className="keys"><kbd>⌥E</kbd> or <kbd>C</kbd></span><span>Archive the card (C is ignored while typing)</span></li>
+        </ul>
+
         <div className="dialog-actions">
           <button className="btn primary" onClick={onClose}>Done</button>
         </div>

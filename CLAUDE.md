@@ -34,7 +34,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 13. Native `alert/confirm/prompt` replaced with in-app dialogs (`Dialog.jsx`) except two rare error alerts in `actions.js`.
 14. No attachments (explicitly not needed).
 15. **Calendar block colors**: blocks are filled solid with their **list's color** (`lists.color`, set from the list ⋯ menu → Calendar color; palette `LIST_COLORS` avoids red/orange/yellow). Lists with no color use the **default block color**, chosen in **Settings** (top bar gear button), default `#aac7f8` (light blue). Text switches between white and navy via `textOn()` for contrast.
-16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
+16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`); it also lists the keyboard shortcuts (formerly a hint in the top bar). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
 17. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
 
 ## Architecture

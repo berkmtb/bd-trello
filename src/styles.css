@@ -81,9 +81,6 @@ kbd {
   font-size: 12px; font-weight: 600; color: #1d2125;
   background: #f5cd47; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
 }
-.shortcut-hint { font-size: 12px; color: rgba(255, 255, 255, 0.75); white-space: nowrap; margin-right: 6px; }
-.shortcut-hint kbd { background: rgba(255, 255, 255, 0.16); color: #fff; margin: 0 1px; }
-@media (max-width: 1180px) { .shortcut-hint { display: none; } }
 .top-btn {
   display: flex; align-items: center; gap: 6px;
   background: rgba(255, 255, 255, 0.12); color: #fff;
@@ -461,3 +458,7 @@ kbd {
 .settings-custom { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text); }
 .settings-custom input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
 .settings-custom code { color: var(--muted); font-size: 12px; }
+.shortcut-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text); }
+.shortcut-list li { display: flex; align-items: baseline; gap: 12px; }
+.shortcut-list .keys { flex: none; width: 124px; }
+.shortcut-list .keys kbd:first-child { margin-left: 0; }

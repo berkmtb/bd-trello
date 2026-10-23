@@ -121,9 +121,6 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
       </div>
 
       <div className="topbar-right">
-        <div className="shortcut-hint" title="Hover a card, then press">
-          <kbd>⌥1</kbd><kbd>⌥2</kbd><kbd>⌥3</kbd> priority · <kbd>⌥0</kbd> clear · <kbd>⌥E</kbd>/<kbd>C</kbd> archive
-        </div>
         {board && <button className="top-btn" onClick={onOpenArchive}><Icon name="archive" /> Archived</button>}
         <div className="menu-wrap">
           <button className="top-btn" onClick={(e) => { e.stopPropagation(); setBackupMenu((v) => !v); }}><Icon name="download" /> Backup</button>
