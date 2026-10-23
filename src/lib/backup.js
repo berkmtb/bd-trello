@@ -84,7 +84,10 @@ export function importBoardOps(src, newId, boardOrder) {
   if (src.planner) {
     const p = src.planner;
     ops.push({ op: 'set', coll: 'boards', id: boardId, data: { name: p.board.name, order: boardOrder, createdAt: now } });
-    for (const l of p.lists) ops.push({ op: 'set', coll: 'lists', id: mapId(l.id), data: { boardId, name: l.name, order: l.order } });
+    for (const l of p.lists) ops.push({
+      op: 'set', coll: 'lists', id: mapId(l.id),
+      data: { boardId, name: l.name, order: l.order, ...(l.color ? { color: l.color } : {}) },
+    });
     for (const c of p.cards) {
       const { id, ...rest } = c;
       ops.push({ op: 'set', coll: 'cards', id: mapId(id), data: { ...rest, boardId, listId: mapId(c.listId) } });

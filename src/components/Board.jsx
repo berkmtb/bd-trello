@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { sortCards } from '../lib/core.js';
+import { sortCards, LIST_COLORS, DEFAULT_LIST_COLOR, listColor } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
@@ -115,7 +115,11 @@ function ListColumn({ list, isFirst, isLast, allLists, cards, blockByCard, actio
   }, [menu]);
 
   return (
-    <section ref={setNodeRef} className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''}`}>
+    <section
+      ref={setNodeRef}
+      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''}`}
+      style={list.color ? { '--list-color': list.color } : undefined}
+    >
       <header className="list-head">
         {editingName ? (
           <input
@@ -137,6 +141,21 @@ function ListColumn({ list, isFirst, isLast, allLists, cards, blockByCard, actio
               <button onClick={() => { setMenu(false); setEditingName(true); }}>Rename list</button>
               <button disabled={isFirst} onClick={() => { setMenu(false); actions.moveList(list, -1, allLists); }}>Move list left</button>
               <button disabled={isLast} onClick={() => { setMenu(false); actions.moveList(list, 1, allLists); }}>Move list right</button>
+              <hr />
+              <div className="menu-label">Calendar color</div>
+              <div className="color-swatches">
+                {LIST_COLORS.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    className={`swatch ${listColor(list) === c.hex ? 'current' : ''}`}
+                    style={{ background: c.hex }}
+                    title={c.hex === DEFAULT_LIST_COLOR ? `${c.name} (default)` : c.name}
+                    aria-label={c.name}
+                    onClick={() => { setMenu(false); actions.setListColor(list.id, c.hex === DEFAULT_LIST_COLOR ? null : c.hex); }}
+                  />
+                ))}
+              </div>
               <hr />
               <button className="danger" onClick={async () => {
                 setMenu(false);

@@ -71,6 +71,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     [lists, board],
   );
   const cardsById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+  const listsById = useMemo(() => new Map(lists.map((l) => [l.id, l])), [lists]);
   const openCard = openCardId ? cardsById.get(openCardId) : null;
 
   // Close the editor if its card disappears (archived elsewhere, deleted).
@@ -300,6 +301,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               setDate={setDate}
               blocks={blocks}
               cardsById={cardsById}
+              listsById={listsById}
               boards={sortedBoards}
               currentBoardId={board?.id}
               drag={drag}

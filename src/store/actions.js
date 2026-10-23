@@ -72,6 +72,8 @@ export function createActions(be) {
       commit([set('lists', be.newId(), { boardId, name, order })]);
     },
     renameList: (id, name) => commit([upd('lists', id, { name })]),
+    /** color = hex string, or null to go back to the default blue. */
+    setListColor: (id, color) => commit([upd('lists', id, { color: color || null })]),
     moveList(list, dir, lists) {
       const mine = lists.filter((l) => l.boardId === list.boardId).sort((a, b) => a.order - b.order);
       const i = mine.findIndex((l) => l.id === list.id);

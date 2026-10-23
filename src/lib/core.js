@@ -7,6 +7,21 @@ export const PRIORITIES = [
 ];
 export const priorityHex = (p) => PRIORITIES.find((x) => x.value === p)?.hex;
 
+/** List colors (used to fill calendar blocks). No red/orange/yellow, so they never read as a priority. */
+export const LIST_COLORS = [
+  { name: 'Blue', hex: '#2563eb' },
+  { name: 'Teal', hex: '#0f766e' },
+  { name: 'Green', hex: '#15803d' },
+  { name: 'Purple', hex: '#7e22ce' },
+  { name: 'Pink', hex: '#be185d' },
+  { name: 'Indigo', hex: '#4338ca' },
+  { name: 'Cyan', hex: '#0e7490' },
+  { name: 'Slate', hex: '#475569' },
+];
+/** Used for any list the user hasn't given a color. */
+export const DEFAULT_LIST_COLOR = LIST_COLORS[0].hex;
+export const listColor = (list) => list?.color || DEFAULT_LIST_COLOR;
+
 /** Band rank: red 1, orange 2, yellow 3, none 4. */
 export const rank = (p) => (p >= 1 && p <= 3 ? p : 4);
 
