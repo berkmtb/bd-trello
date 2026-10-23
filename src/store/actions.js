@@ -81,6 +81,13 @@ export function createActions(be) {
       if (j < 0 || j >= mine.length) return;
       commit([upd('lists', list.id, { order: mine[j].order }), upd('lists', mine[j].id, { order: list.order })]);
     },
+    /** Put a list at `index` among the board's other lists (index counts without the moved list). */
+    moveListTo(list, index, lists) {
+      const others = lists.filter((l) => l.boardId === list.boardId && l.id !== list.id).sort((a, b) => a.order - b.order);
+      const i = Math.max(0, Math.min(index, others.length));
+      const order = orderBetween(others[i - 1]?.order, others[i]?.order);
+      return commit([upd('lists', list.id, { order })]);
+    },
     deleteList(list, cards) {
       const now = Date.now();
       const mine = cards.filter((c) => c.listId === list.id && !c.archived);

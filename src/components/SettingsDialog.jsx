@@ -3,7 +3,8 @@ import { DEFAULT_BLOCK_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
 
 const SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
 
-export default function SettingsDialog({ settings, defaultBlockColor, actions, onClose }) {
+export default function SettingsDialog({ settings, defaultBlockColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
+  const [backingUp, setBackingUp] = useState(false);
   const [draft, setDraft] = useState(defaultBlockColor);   // live value while using the color picker
   const timer = useRef(null);
   useEffect(() => setDraft(defaultBlockColor), [defaultBlockColor]);
@@ -56,6 +57,24 @@ export default function SettingsDialog({ settings, defaultBlockColor, actions, o
           <input id="custom-block-color" type="color" value={shown} onChange={(e) => pickCustom(e.target.value)} />
           <code>{shown.toLowerCase()}</code>
           {!isDefault && <button className="link-btn" onClick={() => choose(DEFAULT_BLOCK_COLOR)}>Reset to default</button>}
+        </div>
+
+        <h3>Your data</h3>
+        <p className="hint">
+          Everything is stored in your Firebase project. Deleted boards can&rsquo;t be recovered, so keep a backup file somewhere safe.
+          After importing from Trello, keep your Trello export files until you&rsquo;ve checked everything came across.
+          Board background images aren&rsquo;t included in backups.
+        </p>
+        <div className={`backup-row ${backupStale ? 'stale' : ''}`}>
+          <div>
+            <div className="b-title">{settings.lastBackupAt
+              ? `Last backup: ${new Date(settings.lastBackupAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`
+              : 'No backup yet'}</div>
+            {backupStale && boardCount > 0 && <div className="b-sub">{settings.lastBackupAt ? 'It has been over a week.' : 'Back up once you have boards set up.'}</div>}
+          </div>
+          <button className="btn" disabled={!boardCount || backingUp} onClick={async () => { setBackingUp(true); try { await onBackupAll(); } finally { setBackingUp(false); } }}>
+            Back up all boards
+          </button>
         </div>
 
         <h3>Keyboard shortcuts</h3>

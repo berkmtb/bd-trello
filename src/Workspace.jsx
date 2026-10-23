@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { createActions } from './store/actions.js';
 import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR } from './lib/core.js';
+import { boardToTrello, downloadJson } from './lib/backup.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
 import Calendar, { PX_PER_MIN, DEFAULT_DURATION } from './components/Calendar.jsx';
@@ -64,6 +65,24 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   useEffect(() => backend.subscribe('settings', [], setSettingsDocs), [backend]);
   const settings = settingsDocs.find((d) => d.id === 'prefs') || {};
   const defaultBlockColor = settings.defaultBlockColor || DEFAULT_BLOCK_COLOR;
+
+  // Full backup (all boards, archived cards included) as one Trello-format JSON file.
+  const backupAll = async () => {
+    const out = [];
+    for (const b of sortedBoards) {
+      const [cs, bs] = await Promise.all([
+        actions.fetchOnce('cards', [['boardId', '==', b.id]]),
+        actions.fetchOnce('blocks', [['boardId', '==', b.id]]),
+      ]);
+      out.push(boardToTrello(b, lists.filter((l) => l.boardId === b.id), cs, bs));
+    }
+    downloadJson({ app: 'planner', version: 1, exportedAt: new Date().toISOString(), boards: out }, `planner-backup-${todayKey()}.json`);
+    await actions.saveSettings(settings, { lastBackupAt: Date.now() });
+    showToast(`Backed up ${out.length} board${out.length === 1 ? '' : 's'}`);
+  };
+  const BACKUP_REMINDER_DAYS = 7;
+  const backupStale = (boards || []).length > 0
+    && (!settings.lastBackupAt || Date.now() - settings.lastBackupAt > BACKUP_REMINDER_DAYS * 86400_000);
   useEffect(
     () => backend.subscribe('backgrounds', [['key', 'in', [board?.id || '-', 'default']]], setBgDocs),
     [backend, board?.id],
@@ -96,7 +115,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
 
   // ---------- keyboard shortcuts ----------
   const latest = useRef();
-  latest.current = { cards, cardsById, openCardId, archive };
+  latest.current = { cards, cardsById, openCardId, archive, boardLists };
   useEffect(() => {
     const onKey = (e) => {
       const st = latest.current;
@@ -127,6 +146,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const [drag, setDrag] = useState(null);
   const dragInfo = useRef(null);
   const lastDragEnd = useRef(0);
+  const listEls = useRef(new Map());   // list id -> its <section>, for list-drag hit testing
+  const recentDrag = () => Date.now() - lastDragEnd.current < 250;
 
   const computeTarget = (e) => {
     const info = dragInfo.current;
@@ -134,9 +155,20 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     // Real pointer position (dnd-kit's delta also includes container scrolling).
     const pointer = info.pointer;
     const over = e.over?.data.current;
-    const next = { kind: info.kind, id: info.id, insert: null, cal: null, overType: over?.type || null };
+    const next = { kind: info.kind, id: info.id, insert: null, cal: null, listIndex: null, overType: over?.type || null };
 
-    if (over?.type === 'list' && info.kind === 'card') {
+    if (info.kind === 'list') {
+      // Where would the list land? Count the other lists whose midpoint is left of the pointer.
+      let listIndex = 0;
+      for (const l of latest.current.boardLists) {
+        if (l.id === info.id) continue;
+        const el = listEls.current.get(l.id);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (pointer.x > r.left + r.width / 2) listIndex++;
+      }
+      next.listIndex = listIndex;
+    } else if (over?.type === 'list' && info.kind === 'card') {
       const card = latest.current.cardsById.get(info.id);
       const myRank = rank(card.priority);
       const listCards = sortCards(latest.current.cards.filter((c) => c.listId === over.listId && c.id !== info.id));
@@ -161,7 +193,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     return next;
   };
 
-  const sameTarget = (a, b) => a && b && a.overType === b.overType
+  const sameTarget = (a, b) => a && b && a.overType === b.overType && a.listIndex === b.listIndex
     && JSON.stringify(a.insert) === JSON.stringify(b.insert) && JSON.stringify(a.cal) === JSON.stringify(b.cal);
 
   const onDragStart = (e) => {
@@ -175,7 +207,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
       info.grabMin = el ? (ae.clientY - el.getBoundingClientRect().top) / PX_PER_MIN : 0;
     }
     dragInfo.current = info;
-    setDrag({ kind: info.kind, id: info.id, insert: null, cal: null, overType: null });
+    setDrag({ kind: info.kind, id: info.id, insert: null, cal: null, listIndex: null, overType: null });
   };
   const onDragMove = (e) => {
     const next = computeTarget(e);
@@ -203,6 +235,13 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
       } else if (t.cal) {
         actions.createBlock(card, date, t.cal.start, t.cal.duration);
       }
+    } else if (info.kind === 'list') {
+      const list = lists.find((l) => l.id === info.id);
+      if (!list || t.listIndex == null) return;
+      const others = boardLists.filter((l) => l.id !== list.id);
+      const current = boardLists.findIndex((l) => l.id === list.id);
+      if (t.listIndex === current && others.length === boardLists.length - 1) return; // dropped where it was
+      actions.moveListTo(list, t.listIndex, lists);
     } else if (info.kind === 'block') {
       const blk = blocks.find((b) => b.id === info.id);
       if (!blk) return;
@@ -249,6 +288,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
 
   const dragCard = drag?.kind === 'card' ? cardsById.get(drag.id) : null;
   const dragBlock = drag?.kind === 'block' ? blocks.find((b) => b.id === drag.id) : null;
+  const dragList = drag?.kind === 'list' ? lists.find((l) => l.id === drag.id) : null;
 
   return (
     <DndContext
@@ -275,6 +315,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           onOpenArchive={() => setArchiveOpen(true)}
           onOpenBackground={() => setBgOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
+          onBackupAll={backupAll}
+          backupStale={backupStale}
           user={user}
           onSignOut={onSignOut}
           demo={demo}
@@ -292,6 +334,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               actions={actions}
               drag={drag}
               cardEls={cardEls}
+              listEls={listEls}
+              recentDrag={recentDrag}
               hoveredRef={hoveredRef}
               onOpenCard={openCardSafe}
             />
@@ -331,6 +375,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           <div className={`overlay-card ${drag.overType === 'calendar' ? 'faint' : ''}`}>
             <CardFace card={dragCard} />
           </div>
+        ) : dragList ? (
+          <div className="overlay-chip">{dragList.name}</div>
         ) : dragBlock && drag.overType !== 'calendar' ? (
           <div className="overlay-chip">Drop to unschedule · {dragBlock.title}</div>
         ) : null}
@@ -373,11 +419,14 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           settings={settings}
           defaultBlockColor={defaultBlockColor}
           actions={actions}
+          boardCount={sortedBoards.length}
+          backupStale={backupStale}
+          onBackupAll={backupAll}
           onClose={() => setSettingsOpen(false)}
         />
       )}
       <DialogHost />
-      {toast && <Toast key={toast.key} {...toast} onDone={() => setToast(null)} />}
+      {toast && <Toast key={toast.key} msg={toast.msg} undo={toast.undo} onDone={() => setToast(null)} />}
     </DndContext>
   );
 }

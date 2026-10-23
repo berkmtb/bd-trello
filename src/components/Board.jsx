@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useDroppable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { sortCards, LIST_COLORS } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, cards, blocks, date, actions, drag, cardEls, hoveredRef, onOpenCard }) {
+export default function Board({ board, lists, defaultColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -22,25 +22,41 @@ export default function Board({ board, lists, defaultColor, cards, blocks, date,
     setName('');
   };
 
+  // Render lists with a drop line at the insertion point while a list is being dragged.
+  const draggingListId = drag?.kind === 'list' ? drag.id : null;
+  const listItems = [];
+  let k = 0;
+  lists.forEach((list, i) => {
+    if (list.id !== draggingListId) {
+      if (draggingListId && drag.listIndex === k) listItems.push(<div key="__list-drop" className="list-drop-line" />);
+      k++;
+    }
+    listItems.push(
+      <ListColumn
+        key={list.id}
+        defaultColor={defaultColor}
+        list={list}
+        isFirst={i === 0}
+        isLast={i === lists.length - 1}
+        allLists={lists}
+        cards={cards}
+        blockByCard={blockByCard}
+        actions={actions}
+        drag={drag}
+        register={register}
+        registerList={(id, el) => { if (el) listEls.current.set(id, el); else listEls.current.delete(id); }}
+        recentDrag={recentDrag}
+        isDragSource={list.id === draggingListId}
+        hoveredRef={hoveredRef}
+        onOpenCard={onOpenCard}
+      />,
+    );
+  });
+  if (draggingListId && drag.listIndex != null && drag.listIndex >= k) listItems.push(<div key="__list-drop" className="list-drop-line" />);
+
   return (
     <div className="board">
-      {lists.map((list, i) => (
-        <ListColumn
-          key={list.id}
-          defaultColor={defaultColor}
-          list={list}
-          isFirst={i === 0}
-          isLast={i === lists.length - 1}
-          allLists={lists}
-          cards={cards}
-          blockByCard={blockByCard}
-          actions={actions}
-          drag={drag}
-          register={register}
-          hoveredRef={hoveredRef}
-          onOpenCard={onOpenCard}
-        />
-      ))}
+      {listItems}
       <div className="list add-list">
         {adding ? (
           <div className="composer">
@@ -67,7 +83,7 @@ export default function Board({ board, lists, defaultColor, cards, blocks, date,
   );
 }
 
-function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, hoveredRef, onOpenCard }) {
+function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -75,6 +91,11 @@ function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, bloc
   const [composer, setComposer] = useState(false);
   const [title, setTitle] = useState('');
   const bodyRef = useRef(null);
+  const sectionRef = (el) => { setNodeRef(el); registerList(list.id, el); };
+  // The header is the drag handle (turned off while renaming so text can be selected).
+  const { setNodeRef: setHandleRef, listeners: handleListeners } = useDraggable({
+    id: `listdrag:${list.id}`, data: { kind: 'list', id: list.id }, disabled: editingName,
+  });
 
   const draggingId = drag?.kind === 'card' ? drag.id : null;
   const insert = drag?.insert?.listId === list.id ? drag.insert : null;
@@ -117,11 +138,11 @@ function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, bloc
 
   return (
     <section
-      ref={setNodeRef}
-      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''}`}
+      ref={sectionRef}
+      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''} ${isDragSource ? 'drag-source' : ''}`}
       style={list.color ? { '--list-color': list.color } : undefined}
     >
-      <header className="list-head">
+      <header className="list-head" ref={setHandleRef} {...(editingName ? {} : handleListeners)}>
         {editingName ? (
           <input
             className="list-name-input"
@@ -131,7 +152,7 @@ function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, bloc
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditingName(false); }}
           />
         ) : (
-          <h2 className="list-name" onClick={() => setEditingName(true)} title="Click to rename">{list.name}</h2>
+          <h2 className="list-name" onClick={() => { if (!recentDrag()) setEditingName(true); }} title="Click to rename · drag the header to move">{list.name}</h2>
         )}
         <span className="list-count">{listCards.length}</span>
         <div className="menu-wrap">

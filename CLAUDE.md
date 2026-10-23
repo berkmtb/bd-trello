@@ -35,13 +35,15 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 14. No attachments (explicitly not needed).
 15. **Calendar block colors**: blocks are filled solid with their **list's color** (`lists.color`, set from the list ⋯ menu → Calendar color; palette `LIST_COLORS` avoids red/orange/yellow). Lists with no color use the **default block color**, chosen in **Settings** (top bar sliders button), default `#aac7f8` (light blue). Text switches between white and navy via `textOn()` for contrast.
 16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`); it also lists the keyboard shortcuts (formerly a hint in the top bar). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
-17. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
+17. **Reorder lists by dragging** their header (drop line shows where it lands; plain click on the title still renames). `actions.moveListTo`; the list menu's Move left/right still work.
+18. **Data safety**: Settings → Your data shows the last backup time and a *Back up all boards* button (`settings/prefs.lastBackupAt`); the Settings button gets a yellow dot if there's no backup or the last one is over 7 days old.
+19. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
 
 ## Architecture
 - React 18 + Vite 8, `@dnd-kit/core`, Tiptap v3 (StarterKit, TaskList, TaskItem, Placeholder), Firebase v13 (Auth + Firestore with persistent local cache).
 - **Demo mode**: if `VITE_FIREBASE_*` env vars are missing, uses `localBackend.js` (localStorage, seeded sample data). `npm run build:demo` builds a single self-contained HTML (vite-plugin-singlefile) used for preview.
 - Both backends share one interface: `subscribe(coll, filters, cb)`, `commit(ops)`, `newId()`. All writes go through `src/store/actions.js`.
-- Firestore layout: `users/{uid}/{boards|lists|cards|blocks|backgrounds|settings}`. Rules in `firestore.rules` (owner-only). Optional `VITE_ALLOWED_EMAILS` client gate.
+- Firestore layout: `users/{uid}/{boards|lists|cards|blocks|backgrounds|settings}`. Rules in `firestore.rules` (owner-only; also pinned to Bruce's verified Google email, so rule changes must be published by hand in the Firebase console). Optional `VITE_ALLOWED_EMAILS` client gate.
   - `cards`: boardId, listId, title, desc (HTML), priority 0–3, order (float, meaningful only within its priority band), archived, archivedAt, createdAt, updatedAt
   - `blocks`: cardId, boardId, title (snapshot), date `YYYY-MM-DD`, start (min), duration (min)
   - `lists`: boardId, name, order, color (optional hex; absent = default block color)

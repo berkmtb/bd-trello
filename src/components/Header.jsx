@@ -17,7 +17,7 @@ function useDropdown() {
   return [open, setOpen];
 }
 
-export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenBackground, onOpenSettings, user, onSignOut, demo, showToast }) {
+export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenBackground, onOpenSettings, onBackupAll, backupStale, user, onSignOut, demo, showToast }) {
   const [boardMenu, setBoardMenu] = useDropdown();
   const [backupMenu, setBackupMenu] = useDropdown();
   const [userMenu, setUserMenu] = useDropdown();
@@ -37,13 +37,7 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
     downloadJson(data, `${safeName(board.name)}-${todayKey()}.json`);
     showToast(`Backed up “${board.name}” (${data.cards.length} cards)`);
   };
-  const backupAll = async () => {
-    setBackupMenu(false);
-    const out = [];
-    for (const b of boards) out.push(await exportBoardData(b));
-    downloadJson({ app: 'planner', version: 1, exportedAt: new Date().toISOString(), boards: out }, `planner-backup-${todayKey()}.json`);
-    showToast(`Backed up ${out.length} board${out.length === 1 ? '' : 's'}`);
-  };
+  const backupAll = () => { setBackupMenu(false); onBackupAll(); };
   const onImportFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -136,7 +130,7 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
         </div>
         <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>
-        <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /> Settings</button>
+        <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /> Settings{backupStale && <span className="notice-dot" title="Time for a backup" />}</button>
         {user && (
           <div className="menu-wrap">
             <button className="avatar" title={user.email} onClick={(e) => { e.stopPropagation(); setUserMenu((v) => !v); }}>{initials}</button>
