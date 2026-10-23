@@ -159,9 +159,9 @@ kbd {
   background: none; border: 0; border-radius: 8px; color: var(--text); font-weight: 500; text-align: left;
 }
 .add-card-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-strong); }
-.add-list { background: rgba(255, 255, 255, 0.2); box-shadow: none; }
-.add-list .add-list-btn { color: #fff; margin: 0; padding: 12px; width: 100%; }
-.add-list .add-list-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.add-list { background: transparent; box-shadow: none; }
+.add-list .add-list-btn { background: #acc7f6; color: #092f6d; font-weight: 600; margin: 0; padding: 12px; width: 100%; border-radius: 14px; }
+.add-list .add-list-btn:hover { background: #bcd2f8; }
 .add-list .composer { padding: 8px; background: var(--list); border-radius: 14px; }
 
 .composer textarea, .composer input {
