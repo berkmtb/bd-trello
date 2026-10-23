@@ -175,14 +175,16 @@ export function createActions(be) {
       return commit([set('settings', 'prefs', { ...rest, ...patch, updatedAt: Date.now() })]);
     },
 
-    // ---------- backgrounds ----------
-    // key is a board id, or 'default' for all boards without their own.
-    setBackground(key, data, alsoClearBoardId) {
-      const ops = [set('backgrounds', key, { key, data, updatedAt: Date.now() })];
-      if (alsoClearBoardId) ops.push(del('backgrounds', alsoClearBoardId));
-      return commit(ops);
+    // ---------- per-board look + background library ----------
+    // `look` is the whole appearance object stored on the board: { theme, backgroundId, ...color overrides }.
+    saveBoardLook: (board, look) => commit([upd('boards', board.id, { look })]),
+    // Backgrounds are a shared library of uploads; each board selects one by id (look.backgroundId).
+    addBackground(name, data) {
+      const id = be.newId();
+      commit([set('backgrounds', id, { key: id, name, data, createdAt: Date.now() })]);
+      return id;
     },
-    removeBackground: (key) => commit([del('backgrounds', key)]),
+    deleteBackground: (id) => commit([del('backgrounds', id)]),
 
     commitRaw: commit,
   };

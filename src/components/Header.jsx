@@ -17,7 +17,7 @@ function useDropdown() {
   return [open, setOpen];
 }
 
-export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenBackground, onOpenSettings, onBackupAll, backupStale, user, onSignOut, demo, showToast }) {
+export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenSettings, onBackupAll, backupStale, user, onSignOut, demo, showToast }) {
   const [boardMenu, setBoardMenu] = useDropdown();
   const [backupMenu, setBackupMenu] = useDropdown();
   const [userMenu, setUserMenu] = useDropdown();
@@ -106,7 +106,6 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
               <hr />
               <button onClick={createBoard}><Icon name="plus" size={14} /> New board…</button>
               {board && <button onClick={renameBoard}>Rename this board…</button>}
-              {board && <button onClick={() => { setBoardMenu(false); onOpenBackground(); }}>Change background…</button>}
               {board && <button className="danger" onClick={deleteBoard}>Delete this board…</button>}
             </div>
           )}

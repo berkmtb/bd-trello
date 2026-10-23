@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { createActions } from './store/actions.js';
-import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR, DEFAULT_ADD_LIST_COLOR, DEFAULT_NEW_CARD_COLOR, DEFAULT_PRIORITY_COLORS } from './lib/core.js';
+import { rank, sortCards, todayKey } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
-import { applyTheme, applyPriorityColors } from './lib/themes.js';
+import { applyTheme, applyPriorityColors, resolveLook } from './lib/themes.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
 import Calendar, { PX_PER_MIN, DEFAULT_DURATION } from './components/Calendar.jsx';
@@ -11,7 +11,6 @@ import CardModal from './components/CardModal.jsx';
 import ArchiveDrawer from './components/ArchiveDrawer.jsx';
 import { CardFace } from './components/CardTile.jsx';
 import Toast from './components/Toast.jsx';
-import BackgroundDialog from './components/BackgroundDialog.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
 import { DialogHost, promptDialog } from './components/Dialog.jsx';
 
@@ -56,22 +55,21 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const sortedBoards = useMemo(() => [...(boards || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [boards]);
   const board = sortedBoards.find((b) => b.id === boardIdPref) || sortedBoards[0] || null;
 
-  // Background for this board, falling back to the all-boards default.
   const [bgDocs, setBgDocs] = useState([]);
-  const [bgOpen, setBgOpen] = useState(false);
 
   // App settings (single doc: settings/prefs).
   const [settingsDocs, setSettingsDocs] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => backend.subscribe('settings', [], setSettingsDocs), [backend]);
   const settings = settingsDocs.find((d) => d.id === 'prefs') || {};
-  const defaultBlockColor = settings.defaultBlockColor || DEFAULT_BLOCK_COLOR;
-  const addListColor = settings.addListColor || DEFAULT_ADD_LIST_COLOR;
-  const newCardColor = settings.newCardColor || DEFAULT_NEW_CARD_COLOR;
-  useEffect(() => { if (settingsDocs.length || settings.theme) applyTheme(settings.theme); }, [settings.theme, settingsDocs.length]);
-  const priorityColors = { ...DEFAULT_PRIORITY_COLORS, ...(settings.priorityColors || {}) };
-  const prioKey = JSON.stringify(settings.priorityColors || null);
-  useEffect(() => { if (settingsDocs.length) applyPriorityColors(JSON.parse(prioKey)); }, [prioKey, settingsDocs.length]);
+  // Appearance is per board: theme, colors and background all come from the current board's `look`.
+  const look = useMemo(() => resolveLook(board), [board]);
+  const { defaultBlockColor, addListColor, newCardColor, priorityColors } = look;
+  const prioKey = JSON.stringify(priorityColors);
+  useEffect(() => { if (board) applyTheme(look.themeId); }, [board, look.themeId]);
+  useEffect(() => { if (board) applyPriorityColors(JSON.parse(prioKey)); }, [board, prioKey]);
+  // Each block uses the default block color of the board it belongs to.
+  const defaultColors = useMemo(() => new Map((boards || []).map((b) => [b.id, resolveLook(b).defaultBlockColor])), [boards]);
 
   // Full backup (all boards, archived cards included) as one Trello-format JSON file.
   const backupAll = async () => {
@@ -91,12 +89,10 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const backupStale = (boards || []).length > 0
     && (!settings.lastBackupAt || Date.now() - settings.lastBackupAt > BACKUP_REMINDER_DAYS * 86400_000);
   useEffect(
-    () => backend.subscribe('backgrounds', [['key', 'in', [board?.id || '-', 'default']]], setBgDocs),
-    [backend, board?.id],
+    () => backend.subscribe('backgrounds', [['key', '==', look.backgroundId || '-']], setBgDocs),
+    [backend, look.backgroundId],
   );
-  const boardBg = bgDocs.find((d) => d.key === board?.id) || null;
-  const defaultBg = bgDocs.find((d) => d.key === 'default') || null;
-  const bg = boardBg || defaultBg;
+  const bg = bgDocs.find((d) => d.key === look.backgroundId) || null;
   const selectBoard = (id) => { setBoardIdPref(id); store.set('planner.board', id); };
   const toggleCal = () => setCalOpen((v) => { store.set('planner.calendar', !v); return !v; });
 
@@ -320,7 +316,6 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           calOpen={calOpen}
           onToggleCal={toggleCal}
           onOpenArchive={() => setArchiveOpen(true)}
-          onOpenBackground={() => setBgOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
           onBackupAll={backupAll}
           backupStale={backupStale}
@@ -365,7 +360,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               blocks={blocks}
               cardsById={cardsById}
               listsById={listsById}
-              defaultColor={defaultBlockColor}
+              defaultColors={defaultColors}
               boards={sortedBoards}
               currentBoardId={board?.id}
               drag={drag}
@@ -413,23 +408,14 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           onClose={() => setArchiveOpen(false)}
         />
       )}
-      {bgOpen && board && (
-        <BackgroundDialog
-          board={board}
-          boardBg={boardBg}
-          defaultBg={defaultBg}
-          actions={actions}
-          onClose={() => setBgOpen(false)}
-          showToast={showToast}
-        />
-      )}
       {settingsOpen && (
         <SettingsDialog
           settings={settings}
-          defaultBlockColor={defaultBlockColor}
-          addListColor={addListColor}
-          newCardColor={newCardColor}
-          priorityColors={priorityColors}
+          board={board}
+          boards={sortedBoards}
+          look={look}
+          backend={backend}
+          showToast={showToast}
           actions={actions}
           boardCount={sortedBoards.length}
           backupStale={backupStale}

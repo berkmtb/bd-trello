@@ -509,3 +509,16 @@ kbd {
 .prio-settings .color-setting { border-top: 0; margin-top: 0; padding-top: 0; }
 .prio-settings h4 { margin-top: 12px; }
 .prio-settings > h4 { margin-top: 16px; }
+
+/* ---------- settings: background library ---------- */
+.bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin: 8px 0; }
+.bg-thumb { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid transparent; border-radius: 12px; background: transparent; text-align: center; }
+.bg-thumb.current { border-color: var(--accent-2); }
+.bg-thumb.none { cursor: pointer; }
+.bg-thumb.none:hover { background: rgba(255, 255, 255, 0.06); }
+.bg-none, .bg-pick { display: block; height: 62px; border-radius: 8px; background-size: cover; background-position: center; border: 0; padding: 0; cursor: pointer; }
+.bg-del { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 6px; background: rgba(0, 0, 0, 0.6); color: #fff; opacity: 0; transition: opacity .12s; }
+.bg-thumb:hover .bg-del, .bg-del:focus-visible { opacity: 1; }
+.bg-del:hover { background: #c9372c; }
+.bg-label { font-size: 11.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bg-actions { display: flex; align-items: center; gap: 14px; margin-top: 4px; }

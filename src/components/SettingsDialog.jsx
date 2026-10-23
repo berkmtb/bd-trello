@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { THEMES } from '../lib/themes.js';
-import { DEFAULT_PRIORITY_COLORS, DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, DEFAULT_NEW_CARD_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
+import { LIST_COLORS, textOn } from '../lib/core.js';
+import { compressImage } from '../lib/image.js';
+import { confirmDialog } from './Dialog.jsx';
+import { Icon } from './Icon.jsx';
 
-const BLOCK_SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
 const sw = (...hexes) => hexes.map((hex) => ({ name: hex, hex }));
 const PRIORITY_SWATCHES = {
   1: sw('#e5484d', '#f87171', '#ff5c7a', '#ef4444', '#dc2626', '#fb7185'),
@@ -10,12 +12,7 @@ const PRIORITY_SWATCHES = {
   3: sw('#f2c200', '#facc15', '#fde047', '#ffd93d', '#ffe066', '#eab308'),
 };
 const PRIORITY_NAMES = { 1: 'Red (priority 1)', 2: 'Orange (priority 2)', 3: 'Yellow (priority 3)' };
-const ADD_LIST_SWATCHES = [
-  { name: 'Yellow (default)', hex: DEFAULT_ADD_LIST_COLOR },
-  { name: 'Light blue', hex: DEFAULT_BLOCK_COLOR },
-  { name: 'White', hex: '#f4f5f7' },
-  ...LIST_COLORS,
-];
+const COMMON_SWATCHES = [...sw('#aac7f8', '#93c5fd', '#a7f3d0', '#fde68a', '#fbcfe8', '#f4f5f7', '#fbbf24'), ...LIST_COLORS];
 
 /** One color preference: live preview, swatches, custom picker and reset. Saves as you pick. */
 function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, preview }) {
@@ -54,13 +51,84 @@ function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, 
         <label htmlFor={id}>Custom</label>
         <input id={id} type="color" value={shown} onChange={(e) => pickCustom(e.target.value)} />
         <code>{shown.toLowerCase()}</code>
-        {shown.toLowerCase() !== defaultValue && <button className="link-btn" onClick={() => choose(defaultValue)}>Reset to default</button>}
+        {shown.toLowerCase() !== defaultValue && <button className="link-btn" onClick={() => choose(defaultValue)}>Reset to theme color</button>}
       </div>
     </div>
   );
 }
 
-export default function SettingsDialog({ settings, defaultBlockColor, addListColor, newCardColor, priorityColors, actions, boardCount, backupStale, onBackupAll, onClose }) {
+/** Library of uploaded backgrounds. The board picks one (or none); deleting is permanent. */
+function BackgroundSection({ board, boards, look, backend, actions, showToast }) {
+  const [lib, setLib] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const fileRef = useRef(null);
+  useEffect(() => backend.subscribe('backgrounds', [], setLib), [backend]);
+
+  const curLook = board.look || {};
+  const select = (id) => {
+    const { backgroundId, ...rest } = curLook;
+    return actions.saveBoardLook(board, id ? { ...rest, backgroundId: id } : rest);
+  };
+  const nameOf = (d) => d.name
+    || (d.key === 'default' ? 'Previous default background' : `Previous · ${boards.find((b) => b.id === d.key)?.name || 'deleted board'}`);
+
+  const onFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+    setBusy(true);
+    try {
+      const { data } = await compressImage(file);
+      const id = actions.addBackground(file.name.replace(/\.[^.]+$/, ''), data);
+      await select(id);
+      showToast(`Background set for “${board.name}”`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (d) => {
+    const ok = await confirmDialog(`Permanently delete “${nameOf(d)}”?`,
+      'This deletes the uploaded image. Any board using it goes back to its theme gradient. This can’t be undone.',
+      { confirmLabel: 'Delete image', danger: true });
+    if (ok) { await actions.deleteBackground(d.id); showToast('Deleted background image'); }
+  };
+
+  const items = (lib || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  return (
+    <div className="color-setting bg-section">
+      <h4>Background</h4>
+      <p className="hint">Pick an uploaded image for this board, or none. Images stay in your library until you delete them.</p>
+      <div className="bg-grid">
+        <button type="button" className={`bg-thumb none ${!look.backgroundId ? 'current' : ''}`} onClick={() => select(null)} aria-label="No background">
+          <span className="bg-none" style={{ background: `linear-gradient(120deg, ${look.theme.vars['--bg-1']}, ${look.theme.vars['--bg-2']} 55%, ${look.theme.vars['--bg-3']})` }} />
+          <span className="bg-label">None (theme)</span>
+        </button>
+        {items.map((d) => (
+          <div key={d.id} className={`bg-thumb ${look.backgroundId === d.key ? 'current' : ''}`}>
+            <button type="button" className="bg-pick" style={{ backgroundImage: `url(${d.data})` }} onClick={() => select(d.key)} aria-label={`Use ${nameOf(d)}`} />
+            <button type="button" className="bg-del" onClick={() => remove(d)} title="Delete permanently" aria-label={`Delete ${nameOf(d)} permanently`}><Icon name="trash" size={14} /></button>
+            <span className="bg-label" title={nameOf(d)}>{nameOf(d)}</span>
+          </div>
+        ))}
+      </div>
+      {lib && !items.length && <p className="hint">No uploaded images yet.</p>}
+      {error && <p className="error-text">{error}</p>}
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
+      <div className="bg-actions">
+        <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}><Icon name="plus" size={14} /> {busy ? 'Uploading…' : 'Upload image…'}</button>
+        {look.backgroundId && <button className="link-btn" onClick={() => select(null)}>Remove from this board</button>}
+      </div>
+    </div>
+  );
+}
+
+export default function SettingsDialog({ settings, board, boards, look, backend, showToast, actions, boardCount, backupStale, onBackupAll, onClose }) {
   const [backingUp, setBackingUp] = useState(false);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -68,107 +136,118 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const curLook = board?.look || {};
+  const saveLook = (patch) => actions.saveBoardLook(board, { ...curLook, ...patch });
+  const t = look.theme;
+
   return (
     <div className="modal-backdrop dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog settings-dialog" role="dialog" aria-label="Settings">
         <h2>Settings</h2>
 
-        <h3>Customize</h3>
+        {board && (
+          <>
+            <h3>Customize · {board.name}</h3>
+            <p className="hint">Theme, colors and background apply to this board only. Each board keeps its own.</p>
 
-        <div className="color-setting theme-picker">
-          <h4>Theme</h4>
-          <p className="hint">Picking a theme sets the app colors and resets the three colors below to match it. You can still tweak them afterwards.</p>
-          <div className="theme-grid">
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={`theme-card ${(settings.theme || 'aurora') === t.id ? 'current' : ''}`}
-                onClick={() => actions.saveSettings(settings, { theme: t.id, ...t.colors, priorityColors: t.priority })}
-                aria-label={`${t.name} theme`}
-              >
-                <span className="theme-swatch" style={{ background: `linear-gradient(120deg, ${t.vars['--bg-1']}, ${t.vars['--bg-2']} 55%, ${t.vars['--bg-3']})` }}>
-                  <span className="theme-list" style={{ background: t.vars['--list'] }}>
-                    <i style={{ background: t.vars['--card'] }} />
-                    <i style={{ background: t.colors.defaultBlockColor }} />
-                  </span>
-                  <span className="theme-prios">{[1, 2, 3].map((n) => <b key={n} style={{ background: t.priority[n] }} />)}</span>
-                  <span className="theme-btn" style={{ background: t.colors.addListColor }} />
-                </span>
-                <span className="theme-name">{t.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <ColorSetting
-          id="custom-block-color"
-          title="Default time block color"
-          hint="Used for calendar blocks whose list has no color of its own. Lists can still override it from their ⋯ menu."
-          value={defaultBlockColor}
-          defaultValue={DEFAULT_BLOCK_COLOR}
-          swatches={BLOCK_SWATCHES}
-          onSave={(hex) => actions.saveSettings(settings, { defaultBlockColor: hex })}
-          preview={(c) => (
-            <div className="settings-preview" style={{ background: c, color: textOn(c) }}>
-              <span className="t">Sample task</span>
-              <span className="s">9:00 AM – 9:30 AM</span>
+            <div className="color-setting theme-picker">
+              <h4>Theme</h4>
+              <p className="hint">Picking a theme sets this board’s colors and resets the color settings below to match it. You can still tweak them afterwards.</p>
+              <div className="theme-grid">
+                {THEMES.map((th) => (
+                  <button
+                    key={th.id}
+                    type="button"
+                    className={`theme-card ${look.themeId === th.id ? 'current' : ''}`}
+                    onClick={() => actions.saveBoardLook(board, { theme: th.id, ...(curLook.backgroundId ? { backgroundId: curLook.backgroundId } : {}) })}
+                    aria-label={`${th.name} theme`}
+                  >
+                    <span className="theme-swatch" style={{ background: `linear-gradient(120deg, ${th.vars['--bg-1']}, ${th.vars['--bg-2']} 55%, ${th.vars['--bg-3']})` }}>
+                      <span className="theme-list" style={{ background: th.vars['--list'] }}>
+                        <i style={{ background: th.vars['--card'] }} />
+                        <i style={{ background: th.colors.defaultBlockColor }} />
+                      </span>
+                      <span className="theme-prios">{[1, 2, 3].map((n) => <b key={n} style={{ background: th.priority[n] }} />)}</span>
+                      <span className="theme-btn" style={{ background: th.colors.addListColor }} />
+                    </span>
+                    <span className="theme-name">{th.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        />
 
-        <ColorSetting
-          id="custom-add-list-color"
-          title="“Add another list” button color"
-          hint="The button at the end of your board's lists."
-          value={addListColor}
-          defaultValue={DEFAULT_ADD_LIST_COLOR}
-          swatches={ADD_LIST_SWATCHES}
-          onSave={(hex) => actions.saveSettings(settings, { addListColor: hex })}
-          preview={(c) => (
-            <div className="settings-preview add-list-preview" style={{ background: c, color: textOn(c) }}>
-              <span className="t">+ Add another list</span>
-            </div>
-          )}
-        />
+            <BackgroundSection board={board} boards={boards} look={look} backend={backend} actions={actions} showToast={showToast} />
 
-        <ColorSetting
-          id="custom-new-card-color"
-          title="New card color"
-          hint="The “Add card” button and the outline around the box when you type a new card."
-          value={newCardColor}
-          defaultValue={DEFAULT_NEW_CARD_COLOR}
-          swatches={BLOCK_SWATCHES.map((c, i) => (i === 0 ? { ...c, name: 'Light blue (default)' } : c))}
-          onSave={(hex) => actions.saveSettings(settings, { newCardColor: hex })}
-          preview={(c) => (
-            <div className="settings-preview new-card-preview" style={{ '--c': c }}>
-              <span className="box">Enter a title for this card…</span>
-              <span className="btn-fake" style={{ background: c, color: textOn(c) }}>Add card</span>
-            </div>
-          )}
-        />
-
-        <div className="color-setting prio-settings">
-          <h4>Priority colors</h4>
-          <p className="hint">The bars on cards and the priority buttons. The ⌥1 / ⌥2 / ⌥3 shortcuts keep their order whatever colors you choose.</p>
-          {[1, 2, 3].map((n) => (
             <ColorSetting
-              key={n}
-              id={`custom-prio-${n}`}
-              title={PRIORITY_NAMES[n]}
-              value={priorityColors[n]}
-              defaultValue={DEFAULT_PRIORITY_COLORS[n]}
-              swatches={PRIORITY_SWATCHES[n]}
-              onSave={(hex) => actions.saveSettings(settings, { priorityColors: { ...priorityColors, [n]: hex } })}
+              id="custom-block-color"
+              title="Default time block color"
+              hint="Used for calendar blocks whose list has no color of its own. Lists can still override it from their ⋯ menu."
+              value={look.defaultBlockColor}
+              defaultValue={t.colors.defaultBlockColor}
+              swatches={COMMON_SWATCHES}
+              onSave={(hex) => saveLook({ defaultBlockColor: hex })}
+              preview={(c) => (
+                <div className="settings-preview" style={{ background: c, color: textOn(c) }}>
+                  <span className="t">Sample task</span>
+                  <span className="s">9:00 AM – 9:30 AM</span>
+                </div>
+              )}
             />
-          ))}
-        </div>
+
+            <ColorSetting
+              id="custom-new-card-color"
+              title="New card color"
+              hint="The “Add card” button and the outline around the box when you type a new card."
+              value={look.newCardColor}
+              defaultValue={t.colors.newCardColor}
+              swatches={COMMON_SWATCHES}
+              onSave={(hex) => saveLook({ newCardColor: hex })}
+              preview={(c) => (
+                <div className="settings-preview new-card-preview" style={{ '--c': c }}>
+                  <span className="box">Enter a title for this card…</span>
+                  <span className="btn-fake" style={{ background: c, color: textOn(c) }}>Add card</span>
+                </div>
+              )}
+            />
+
+            <ColorSetting
+              id="custom-add-list-color"
+              title="“Add another list” button color"
+              hint="The button at the end of this board's lists."
+              value={look.addListColor}
+              defaultValue={t.colors.addListColor}
+              swatches={COMMON_SWATCHES}
+              onSave={(hex) => saveLook({ addListColor: hex })}
+              preview={(c) => (
+                <div className="settings-preview add-list-preview" style={{ background: c, color: textOn(c) }}>
+                  <span className="t">+ Add another list</span>
+                </div>
+              )}
+            />
+
+            <div className="color-setting prio-settings">
+              <h4>Priority colors</h4>
+              <p className="hint">The bars on cards and the priority buttons. The ⌥1 / ⌥2 / ⌥3 shortcuts keep their order whatever colors you choose.</p>
+              {[1, 2, 3].map((n) => (
+                <ColorSetting
+                  key={n}
+                  id={`custom-prio-${n}`}
+                  title={PRIORITY_NAMES[n]}
+                  value={look.priorityColors[n]}
+                  defaultValue={t.priority[n]}
+                  swatches={PRIORITY_SWATCHES[n]}
+                  onSave={(hex) => saveLook({ priorityColors: { ...look.priorityColors, [n]: hex } })}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         <h3>Your data</h3>
         <p className="hint">
           Everything is stored in your Firebase project. Deleted boards can&rsquo;t be recovered, so keep a backup file somewhere safe.
           After importing from Trello, keep your Trello export files until you&rsquo;ve checked everything came across.
-          Board background images aren&rsquo;t included in backups.
+          Board background images and themes aren&rsquo;t included in backups.
         </p>
         <div className={`backup-row ${backupStale ? 'stale' : ''}`}>
           <div>

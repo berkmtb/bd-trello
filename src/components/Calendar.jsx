@@ -34,7 +34,7 @@ function layoutBlocks(blocks) {
   return out;
 }
 
-export default function Calendar({ date, setDate, blocks, cardsById, listsById, defaultColor, boards, currentBoardId, drag, dragCard, gridRef, actions, onOpenCard, onClose }) {
+export default function Calendar({ date, setDate, blocks, cardsById, listsById, defaultColors, boards, currentBoardId, drag, dragCard, gridRef, actions, onOpenCard, onClose }) {
   const { setNodeRef } = useDroppable({ id: 'calendar', data: { type: 'calendar' } });
   const scrollRef = useRef(null);
   const [now, setNow] = useState(() => new Date());
@@ -58,7 +58,8 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
   const preview = drag?.cal;
   const previewTitle = drag?.kind === 'card' ? dragCard?.title : blocks.find((b) => b.id === drag?.id)?.title;
   const previewCard = drag?.kind === 'card' ? dragCard : cardsById.get(blocks.find((b) => b.id === drag?.id)?.cardId);
-  const previewColor = listColor(listsById.get(previewCard?.listId), defaultColor);
+  const blockColor = (card) => listColor(listsById.get(card?.listId), defaultColors.get(card?.boardId));
+  const previewColor = blockColor(previewCard);
 
   return (
     <aside className="calendar">
@@ -88,7 +89,7 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
                 block={b}
                 pos={layout.get(b.id)}
                 card={cardsById.get(b.cardId)}
-                color={listColor(listsById.get(cardsById.get(b.cardId)?.listId), defaultColor)}
+                color={blockColor(cardsById.get(b.cardId))}
                 otherBoard={(() => { const c = cardsById.get(b.cardId); return c && c.boardId !== currentBoardId ? boardName(c.boardId) : null; })()}
                 hidden={drag?.kind === 'block' && drag.id === b.id && !!preview}
                 actions={actions}
