@@ -7,12 +7,12 @@ import { Icon } from './Icon.jsx';
 
 const sw = (...hexes) => hexes.map((hex) => ({ name: hex, hex }));
 const PRIORITY_SWATCHES = {
-  1: sw('#e5484d', '#f87171', '#ff5c7a', '#ef4444', '#dc2626', '#fb7185'),
-  2: sw('#f76b15', '#fb923c', '#f97316', '#ff9f43', '#ffa94d', '#ea580c'),
-  3: sw('#f2c200', '#facc15', '#fde047', '#ffd93d', '#ffe066', '#eab308'),
+  1: sw('#e0787a', '#d46a6c', '#e8918f', '#e5484d', '#f87171', '#dc2626'),
+  2: sw('#e3a062', '#d99352', '#ecb585', '#f76b15', '#fb923c', '#ea580c'),
+  3: sw('#dcc56e', '#d1b95d', '#e6d58f', '#f2c200', '#facc15', '#eab308'),
 };
 const PRIORITY_NAMES = { 1: 'Red (priority 1)', 2: 'Orange (priority 2)', 3: 'Yellow (priority 3)' };
-const COMMON_SWATCHES = [...sw('#aac7f8', '#93c5fd', '#a7f3d0', '#fde68a', '#fbcfe8', '#f4f5f7', '#fbbf24'), ...LIST_COLORS];
+const COMMON_SWATCHES = [...sw('#a8c4ec', '#b5d2e6', '#c3ced5', '#b5d9c6', '#d8c7b4', '#d4c58d', '#6f9bd6'), ...LIST_COLORS];
 
 /** One color preference: live preview, swatches, custom picker and reset. Saves as you pick. */
 function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, preview }) {
