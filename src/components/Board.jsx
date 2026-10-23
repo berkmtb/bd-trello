@@ -5,7 +5,7 @@ import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard }) {
+export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, focusListId, onFocus }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -50,12 +50,53 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
         isDragSource={list.id === draggingListId}
         hoveredRef={hoveredRef}
         onOpenCard={onOpenCard}
+        onFocus={onFocus}
       />,
     );
   });
   if (draggingListId && drag.listIndex != null && drag.listIndex >= k) listItems.push(<div key="__list-drop" className="list-drop-line" />);
 
+  const focusList = focusListId ? lists.find((l) => l.id === focusListId) : null;
+  if (focusList) {
+    return (
+      <div className="board-wrap">
+        <div className="focus-bar">
+          <div className="focus-chips">
+            {lists.map((l) => (
+              <button key={l.id} className={`focus-chip ${l.id === focusList.id ? 'on' : ''}`} onClick={() => onFocus(l.id)}>{l.name}</button>
+            ))}
+          </div>
+          <button className="top-btn" onClick={() => onFocus(null)}>Show all lists</button>
+        </div>
+        <div className="board focus-mode">
+          <ListColumn
+            key={focusList.id}
+            focused
+            onFocus={onFocus}
+            defaultColor={defaultColor}
+            newCardColor={newCardColor}
+            list={focusList}
+            isFirst
+            isLast
+            allLists={lists}
+            cards={cards}
+            blockByCard={blockByCard}
+            actions={actions}
+            drag={drag}
+            register={register}
+            registerList={() => {}}
+            recentDrag={recentDrag}
+            isDragSource={false}
+            hoveredRef={hoveredRef}
+            onOpenCard={onOpenCard}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
+    <div className="board-wrap">
     <div className="board">
       {listItems}
       <div className="list add-list">
@@ -81,10 +122,11 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
         )}
       </div>
     </div>
+    </div>
   );
 }
 
-function ListColumn({ list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
+function ListColumn({ focused, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -95,7 +137,7 @@ function ListColumn({ list, defaultColor, newCardColor, isFirst, isLast, allList
   const sectionRef = (el) => { setNodeRef(el); registerList(list.id, el); };
   // The header is the drag handle (turned off while renaming so text can be selected).
   const { setNodeRef: setHandleRef, listeners: handleListeners } = useDraggable({
-    id: `listdrag:${list.id}`, data: { kind: 'list', id: list.id }, disabled: editingName,
+    id: `listdrag:${list.id}`, data: { kind: 'list', id: list.id }, disabled: editingName || focused,
   });
 
   const draggingId = drag?.kind === 'card' ? drag.id : null;
@@ -140,10 +182,10 @@ function ListColumn({ list, defaultColor, newCardColor, isFirst, isLast, allList
   return (
     <section
       ref={sectionRef}
-      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''} ${isDragSource ? 'drag-source' : ''}`}
+      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''} ${isDragSource ? 'drag-source' : ''} ${focused ? 'focused' : ''}`}
       style={list.color ? { '--list-color': list.color } : undefined}
     >
-      <header className="list-head" ref={setHandleRef} {...(editingName ? {} : handleListeners)}>
+      <header className="list-head" ref={setHandleRef} {...(editingName || focused ? {} : handleListeners)}>
         {editingName ? (
           <input
             className="list-name-input"
@@ -161,6 +203,7 @@ function ListColumn({ list, defaultColor, newCardColor, isFirst, isLast, allList
           {menu && (
             <div className="menu" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => { setMenu(false); setComposer(true); }}>Add card</button>
+              <button onClick={() => { setMenu(false); onFocus(focused ? null : list.id); }}>{focused ? 'Show all lists' : 'Focus on this list'}</button>
               <button onClick={() => { setMenu(false); setEditingName(true); }}>Rename list</button>
               <button disabled={isFirst} onClick={() => { setMenu(false); actions.moveList(list, -1, allLists); }}>Move list left</button>
               <button disabled={isLast} onClick={() => { setMenu(false); actions.moveList(list, 1, allLists); }}>Move list right</button>

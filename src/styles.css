@@ -522,3 +522,15 @@ kbd {
 .bg-del:hover { background: #c9372c; }
 .bg-label { font-size: 11.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bg-actions { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+
+/* ---------- focused list view ---------- */
+.board-wrap { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.board-wrap > .board { min-height: 0; }
+.focus-bar { display: flex; align-items: center; gap: 12px; padding: 10px 12px 0; }
+.focus-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.focus-chip { flex: none; border: 0; border-radius: 999px; padding: 6px 12px; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.focus-chip:hover { background: rgba(255, 255, 255, 0.24); }
+.focus-chip.on { background: #fff; color: #1d2125; }
+.board.focus-mode { justify-content: center; }
+.list.focused { width: min(680px, 100%); }
+.list.focused .list-head { cursor: default; }

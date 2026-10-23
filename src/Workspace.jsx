@@ -93,6 +93,14 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     [backend, look.backgroundId],
   );
   const bg = bgDocs.find((d) => d.key === look.backgroundId) || null;
+  // Focused view: show a single list of the board. Remembered per board.
+  const [focusMap, setFocusMap] = useState(() => store.get('planner.focus', {}));
+  const setFocus = (listId) => setFocusMap((m) => {
+    const next = { ...m };
+    if (listId) next[board.id] = listId; else delete next[board.id];
+    store.set('planner.focus', next);
+    return next;
+  });
   const selectBoard = (id) => { setBoardIdPref(id); store.set('planner.board', id); };
   const toggleCal = () => setCalOpen((v) => { store.set('planner.calendar', !v); return !v; });
 
@@ -342,6 +350,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               recentDrag={recentDrag}
               hoveredRef={hoveredRef}
               onOpenCard={openCardSafe}
+              focusListId={focusMap[board.id] || null}
+              onFocus={setFocus}
             />
           ) : (
             <div className="empty-board">
