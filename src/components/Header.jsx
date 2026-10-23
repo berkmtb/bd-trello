@@ -17,7 +17,7 @@ function useDropdown() {
   return [open, setOpen];
 }
 
-export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenBackground, user, onSignOut, demo, showToast }) {
+export default function Header({ boards, board, lists, actions, onSelectBoard, calOpen, onToggleCal, onOpenArchive, onOpenBackground, onOpenSettings, user, onSignOut, demo, showToast }) {
   const [boardMenu, setBoardMenu] = useDropdown();
   const [backupMenu, setBackupMenu] = useDropdown();
   const [userMenu, setUserMenu] = useDropdown();
@@ -139,6 +139,7 @@ export default function Header({ boards, board, lists, actions, onSelectBoard, c
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
         </div>
         <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>
+        <button className="top-btn" onClick={onOpenSettings}><Icon name="gear" /> Settings</button>
         {user && (
           <div className="menu-wrap">
             <button className="avatar" title={user.email} onClick={(e) => { e.stopPropagation(); setUserMenu((v) => !v); }}>{initials}</button>

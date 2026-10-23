@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { sortCards, LIST_COLORS, DEFAULT_LIST_COLOR, listColor } from '../lib/core.js';
+import { sortCards, LIST_COLORS } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, cards, blocks, date, actions, drag, cardEls, hoveredRef, onOpenCard }) {
+export default function Board({ board, lists, defaultColor, cards, blocks, date, actions, drag, cardEls, hoveredRef, onOpenCard }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -27,6 +27,7 @@ export default function Board({ board, lists, cards, blocks, date, actions, drag
       {lists.map((list, i) => (
         <ListColumn
           key={list.id}
+          defaultColor={defaultColor}
           list={list}
           isFirst={i === 0}
           isLast={i === lists.length - 1}
@@ -66,7 +67,7 @@ export default function Board({ board, lists, cards, blocks, date, actions, drag
   );
 }
 
-function ListColumn({ list, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, hoveredRef, onOpenCard }) {
+function ListColumn({ list, defaultColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, hoveredRef, onOpenCard }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -144,15 +145,23 @@ function ListColumn({ list, isFirst, isLast, allLists, cards, blockByCard, actio
               <hr />
               <div className="menu-label">Calendar color</div>
               <div className="color-swatches">
+                <button
+                  type="button"
+                  className={`swatch ${!list.color ? 'current' : ''}`}
+                  style={{ background: defaultColor }}
+                  title="Default (set in Settings)"
+                  aria-label="Default color"
+                  onClick={() => { setMenu(false); actions.setListColor(list.id, null); }}
+                />
                 {LIST_COLORS.map((c) => (
                   <button
                     key={c.hex}
                     type="button"
-                    className={`swatch ${listColor(list) === c.hex ? 'current' : ''}`}
+                    className={`swatch ${list.color === c.hex ? 'current' : ''}`}
                     style={{ background: c.hex }}
-                    title={c.hex === DEFAULT_LIST_COLOR ? `${c.name} (default)` : c.name}
+                    title={c.name}
                     aria-label={c.name}
-                    onClick={() => { setMenu(false); actions.setListColor(list.id, c.hex === DEFAULT_LIST_COLOR ? null : c.hex); }}
+                    onClick={() => { setMenu(false); actions.setListColor(list.id, c.hex); }}
                   />
                 ))}
               </div>

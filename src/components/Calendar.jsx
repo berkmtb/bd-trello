@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { addDays, fmtDayLabel, fmtTime, listColor, todayKey } from '../lib/core.js';
+import { addDays, fmtDayLabel, fmtTime, listColor, textOn, todayKey } from '../lib/core.js';
 import { Icon } from './Icon.jsx';
 
 export const HOUR_PX = 48;              // one 30-minute slot = 24px
@@ -34,7 +34,7 @@ function layoutBlocks(blocks) {
   return out;
 }
 
-export default function Calendar({ date, setDate, blocks, cardsById, listsById, boards, currentBoardId, drag, dragCard, gridRef, actions, onOpenCard, onClose }) {
+export default function Calendar({ date, setDate, blocks, cardsById, listsById, defaultColor, boards, currentBoardId, drag, dragCard, gridRef, actions, onOpenCard, onClose }) {
   const { setNodeRef } = useDroppable({ id: 'calendar', data: { type: 'calendar' } });
   const scrollRef = useRef(null);
   const [now, setNow] = useState(() => new Date());
@@ -58,7 +58,7 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
   const preview = drag?.cal;
   const previewTitle = drag?.kind === 'card' ? dragCard?.title : blocks.find((b) => b.id === drag?.id)?.title;
   const previewCard = drag?.kind === 'card' ? dragCard : cardsById.get(blocks.find((b) => b.id === drag?.id)?.cardId);
-  const previewColor = listColor(listsById.get(previewCard?.listId));
+  const previewColor = listColor(listsById.get(previewCard?.listId), defaultColor);
 
   return (
     <aside className="calendar">
@@ -88,7 +88,7 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
                 block={b}
                 pos={layout.get(b.id)}
                 card={cardsById.get(b.cardId)}
-                color={listColor(listsById.get(cardsById.get(b.cardId)?.listId))}
+                color={listColor(listsById.get(cardsById.get(b.cardId)?.listId), defaultColor)}
                 otherBoard={(() => { const c = cardsById.get(b.cardId); return c && c.boardId !== currentBoardId ? boardName(c.boardId) : null; })()}
                 hidden={drag?.kind === 'block' && drag.id === b.id && !!preview}
                 actions={actions}
@@ -99,7 +99,8 @@ export default function Calendar({ date, setDate, blocks, cardsById, listsById, 
               <div className="cal-block ghost" style={{
                 top: preview.start * PX_PER_MIN,
                 height: preview.duration * PX_PER_MIN - 2,
-                '--accent': previewColor || 'var(--accent)',
+                '--accent': previewColor,
+                '--on-accent': textOn(previewColor),
               }}>
                 <div className="cb-title">{previewTitle}</div>
                 <div className="cb-time">{fmtTime(preview.start)} – {fmtTime(preview.start + preview.duration)}</div>
@@ -156,7 +157,8 @@ function CalBlock({ block, pos, card, color, otherBoard, hidden, actions, onOpen
         height: duration * PX_PER_MIN - 2,
         left: `calc(${(col / cols) * 100}% + 2px)`,
         width: `calc(${100 / cols}% - 4px)`,
-        '--accent': color || 'var(--accent)',
+        '--accent': color,
+        '--on-accent': textOn(color),
       }}
       onClick={() => { if (card && Date.now() - resizedAt.current > 300) onOpenCard(card.id); }}
       {...attributes}

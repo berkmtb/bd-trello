@@ -18,9 +18,19 @@ export const LIST_COLORS = [
   { name: 'Cyan', hex: '#0e7490' },
   { name: 'Slate', hex: '#475569' },
 ];
-/** Used for any list the user hasn't given a color. */
-export const DEFAULT_LIST_COLOR = LIST_COLORS[0].hex;
-export const listColor = (list) => list?.color || DEFAULT_LIST_COLOR;
+/** Default time-block color (Settings can override it). */
+export const DEFAULT_BLOCK_COLOR = '#aac7f8';
+/** A list's color, or the default block color when none was chosen. */
+export const listColor = (list, fallback = DEFAULT_BLOCK_COLOR) => list?.color || fallback;
+/** Dark navy or white text, whichever reads better on this fill. */
+export function textOn(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return '#fff';
+  const n = parseInt(m[1], 16);
+  const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+  return L > 0.4 ? '#092f6d' : '#fff';
+}
 
 /** Band rank: red 1, orange 2, yellow 3, none 4. */
 export const rank = (p) => (p >= 1 && p <= 3 ? p : 4);

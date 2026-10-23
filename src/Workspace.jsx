@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { createActions } from './store/actions.js';
-import { rank, sortCards, todayKey } from './lib/core.js';
+import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR } from './lib/core.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
 import Calendar, { PX_PER_MIN, DEFAULT_DURATION } from './components/Calendar.jsx';
@@ -10,6 +10,7 @@ import ArchiveDrawer from './components/ArchiveDrawer.jsx';
 import { CardFace } from './components/CardTile.jsx';
 import Toast from './components/Toast.jsx';
 import BackgroundDialog from './components/BackgroundDialog.jsx';
+import SettingsDialog from './components/SettingsDialog.jsx';
 import { DialogHost, promptDialog } from './components/Dialog.jsx';
 
 const store = {
@@ -56,6 +57,13 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   // Background for this board, falling back to the all-boards default.
   const [bgDocs, setBgDocs] = useState([]);
   const [bgOpen, setBgOpen] = useState(false);
+
+  // App settings (single doc: settings/prefs).
+  const [settingsDocs, setSettingsDocs] = useState([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => backend.subscribe('settings', [], setSettingsDocs), [backend]);
+  const settings = settingsDocs.find((d) => d.id === 'prefs') || {};
+  const defaultBlockColor = settings.defaultBlockColor || DEFAULT_BLOCK_COLOR;
   useEffect(
     () => backend.subscribe('backgrounds', [['key', 'in', [board?.id || '-', 'default']]], setBgDocs),
     [backend, board?.id],
@@ -266,6 +274,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           onToggleCal={toggleCal}
           onOpenArchive={() => setArchiveOpen(true)}
           onOpenBackground={() => setBgOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
           user={user}
           onSignOut={onSignOut}
           demo={demo}
@@ -276,6 +285,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
             <Board
               board={board}
               lists={boardLists}
+              defaultColor={defaultBlockColor}
               cards={cards}
               blocks={blocks}
               date={date}
@@ -302,6 +312,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               blocks={blocks}
               cardsById={cardsById}
               listsById={listsById}
+              defaultColor={defaultBlockColor}
               boards={sortedBoards}
               currentBoardId={board?.id}
               drag={drag}
@@ -355,6 +366,14 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           actions={actions}
           onClose={() => setBgOpen(false)}
           showToast={showToast}
+        />
+      )}
+      {settingsOpen && (
+        <SettingsDialog
+          settings={settings}
+          defaultBlockColor={defaultBlockColor}
+          actions={actions}
+          onClose={() => setSettingsOpen(false)}
         />
       )}
       <DialogHost />

@@ -1,6 +1,6 @@
 // Demo backend: same interface as Firestore, data kept in this browser only.
 const KEY = 'planner-demo-v1';
-const COLLS = ['boards', 'lists', 'cards', 'blocks', 'backgrounds'];
+const COLLS = ['boards', 'lists', 'cards', 'blocks', 'backgrounds', 'settings'];
 
 function load() {
   try {

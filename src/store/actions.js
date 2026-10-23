@@ -162,6 +162,12 @@ export function createActions(be) {
     updateBlock: (id, patch) => commit([upd('blocks', id, patch)]),
     deleteBlock: (id) => commit([del('blocks', id)]),
 
+    // ---------- settings (one doc: settings/prefs) ----------
+    saveSettings(current, patch) {
+      const { id, ...rest } = current || {};
+      return commit([set('settings', 'prefs', { ...rest, ...patch, updatedAt: Date.now() })]);
+    },
+
     // ---------- backgrounds ----------
     // key is a board id, or 'default' for all boards without their own.
     setBackground(key, data, alsoClearBoardId) {

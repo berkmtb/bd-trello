@@ -33,14 +33,19 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 12. **Backgrounds**: board menu → Change background… Upload an image; browser resizes to ≤2400px JPEG under ~900 KB and stores it in Firestore (Firebase Storage would require the Blaze plan). Per board, or a default for all boards; removable. Not included in backups.
 13. Native `alert/confirm/prompt` replaced with in-app dialogs (`Dialog.jsx`) except two rare error alerts in `actions.js`.
 14. No attachments (explicitly not needed).
+15. **Calendar block colors**: blocks are filled solid with their **list's color** (`lists.color`, set from the list ⋯ menu → Calendar color; palette `LIST_COLORS` avoids red/orange/yellow). Lists with no color use the **default block color**, chosen in **Settings** (top bar gear button), default `#aac7f8` (light blue). Text switches between white and navy via `textOn()` for contrast.
+16. **Settings**: modal (`SettingsDialog.jsx`), stored in the single doc `settings/prefs` (`defaultBlockColor`). Written with `actions.saveSettings` (set, not update, since the doc may not exist yet).
+17. **Logo**: the b mark (`public/logo-b.png`, cleaned circle, no halo) is used in the header, sign-in screen and favicon.
 
 ## Architecture
 - React 18 + Vite 8, `@dnd-kit/core`, Tiptap v3 (StarterKit, TaskList, TaskItem, Placeholder), Firebase v13 (Auth + Firestore with persistent local cache).
 - **Demo mode**: if `VITE_FIREBASE_*` env vars are missing, uses `localBackend.js` (localStorage, seeded sample data). `npm run build:demo` builds a single self-contained HTML (vite-plugin-singlefile) used for preview.
 - Both backends share one interface: `subscribe(coll, filters, cb)`, `commit(ops)`, `newId()`. All writes go through `src/store/actions.js`.
-- Firestore layout: `users/{uid}/{boards|lists|cards|blocks|backgrounds}`. Rules in `firestore.rules` (owner-only). Optional `VITE_ALLOWED_EMAILS` client gate.
+- Firestore layout: `users/{uid}/{boards|lists|cards|blocks|backgrounds|settings}`. Rules in `firestore.rules` (owner-only). Optional `VITE_ALLOWED_EMAILS` client gate.
   - `cards`: boardId, listId, title, desc (HTML), priority 0–3, order (float, meaningful only within its priority band), archived, archivedAt, createdAt, updatedAt
   - `blocks`: cardId, boardId, title (snapshot), date `YYYY-MM-DD`, start (min), duration (min)
+  - `lists`: boardId, name, order, color (optional hex; absent = default block color)
+  - `settings`: one doc `prefs` with defaultBlockColor
   - `backgrounds`: id = boardId or `default`; key (same), data (JPEG data URL)
 - Subscriptions: all boards, all lists, cards where archived==false (all boards), blocks for the shown date, backgrounds for current board + default, archived cards only when the drawer is open.
 
@@ -52,10 +57,10 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 - `src/store/`: firebase.js, localBackend.js, actions.js, seed.js
 - `scripts/push_to_trello.py`, `firestore.rules`, `.env.example`, `README.md` (user-facing setup)
 
-## Status (as of 2026-10-22)
-- Code is on GitHub `berkmtb/bd-trello` (private), branch `main`, 2 commits: initial app; calendar-left + backgrounds.
+## Status (as of 2026-10-23)
+- Code is on GitHub `berkmtb/bd-trello` (private), branch `main`. Deployed at https://bd-trello.vercel.app (Firebase project `bd-trello-cad04`, Google sign-in, Vercel domain authorized, `VITE_ALLOWED_EMAILS` set).
 - Tested with headless Chromium (Playwright) against the demo build: shortcuts, band-clamped drag, cross-list moves, edge scrolling, calendar create/move/resize/unschedule, editor checkboxes, export → import round trip, Trello-export import, dialogs, backgrounds. No console errors.
-- **Not yet done by Bruce** (as of hand-off): Firebase project setup, Vercel import with env vars, adding the Vercel domain to Firebase Authorized domains, importing his Trello boards. Steps are in README.md.
+- Firebase, Vercel and authorized-domain setup are done. Bruce still needs to sign in and import his Trello boards (Backup → Import).
 - Not decided yet: phone layout (asked, not answered; currently desktop-first).
 
 ## Working on it in a new session
