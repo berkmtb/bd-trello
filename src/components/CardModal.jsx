@@ -122,7 +122,7 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
               <button
                 key={p.value}
                 className={`prio-chip ${card.priority === p.value ? 'on' : ''}`}
-                style={{ '--c': p.hex }}
+                style={{ '--c': `var(--prio-${p.value})` }}
                 onClick={() => actions.setPriority(card, p.value, cards)}
                 title={`Option+${p.key}`}
               >

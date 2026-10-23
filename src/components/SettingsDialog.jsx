@@ -1,8 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { THEMES } from '../lib/themes.js';
-import { DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, DEFAULT_NEW_CARD_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
+import { DEFAULT_PRIORITY_COLORS, DEFAULT_ADD_LIST_COLOR, DEFAULT_BLOCK_COLOR, DEFAULT_NEW_CARD_COLOR, LIST_COLORS, textOn } from '../lib/core.js';
 
 const BLOCK_SWATCHES = [{ name: 'Light blue (default)', hex: DEFAULT_BLOCK_COLOR }, ...LIST_COLORS];
+const sw = (...hexes) => hexes.map((hex) => ({ name: hex, hex }));
+const PRIORITY_SWATCHES = {
+  1: sw('#e5484d', '#f87171', '#ff5c7a', '#ef4444', '#dc2626', '#fb7185'),
+  2: sw('#f76b15', '#fb923c', '#f97316', '#ff9f43', '#ffa94d', '#ea580c'),
+  3: sw('#f2c200', '#facc15', '#fde047', '#ffd93d', '#ffe066', '#eab308'),
+};
+const PRIORITY_NAMES = { 1: 'Red (priority 1)', 2: 'Orange (priority 2)', 3: 'Yellow (priority 3)' };
 const ADD_LIST_SWATCHES = [
   { name: 'Yellow (default)', hex: DEFAULT_ADD_LIST_COLOR },
   { name: 'Light blue', hex: DEFAULT_BLOCK_COLOR },
@@ -28,8 +35,8 @@ function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, 
   return (
     <div className="color-setting">
       <h4>{title}</h4>
-      <p className="hint">{hint}</p>
-      {preview(shown)}
+      {hint && <p className="hint">{hint}</p>}
+      {preview && preview(shown)}
       <div className="settings-swatches">
         {swatches.map((c) => (
           <button
@@ -53,7 +60,7 @@ function ColorSetting({ id, title, hint, value, defaultValue, swatches, onSave, 
   );
 }
 
-export default function SettingsDialog({ settings, defaultBlockColor, addListColor, newCardColor, actions, boardCount, backupStale, onBackupAll, onClose }) {
+export default function SettingsDialog({ settings, defaultBlockColor, addListColor, newCardColor, priorityColors, actions, boardCount, backupStale, onBackupAll, onClose }) {
   const [backingUp, setBackingUp] = useState(false);
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -77,7 +84,7 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
                 key={t.id}
                 type="button"
                 className={`theme-card ${(settings.theme || 'aurora') === t.id ? 'current' : ''}`}
-                onClick={() => actions.saveSettings(settings, { theme: t.id, ...t.colors })}
+                onClick={() => actions.saveSettings(settings, { theme: t.id, ...t.colors, priorityColors: t.priority })}
                 aria-label={`${t.name} theme`}
               >
                 <span className="theme-swatch" style={{ background: `linear-gradient(120deg, ${t.vars['--bg-1']}, ${t.vars['--bg-2']} 55%, ${t.vars['--bg-3']})` }}>
@@ -85,6 +92,7 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
                     <i style={{ background: t.vars['--card'] }} />
                     <i style={{ background: t.colors.defaultBlockColor }} />
                   </span>
+                  <span className="theme-prios">{[1, 2, 3].map((n) => <b key={n} style={{ background: t.priority[n] }} />)}</span>
                   <span className="theme-btn" style={{ background: t.colors.addListColor }} />
                 </span>
                 <span className="theme-name">{t.name}</span>
@@ -139,6 +147,22 @@ export default function SettingsDialog({ settings, defaultBlockColor, addListCol
             </div>
           )}
         />
+
+        <div className="color-setting prio-settings">
+          <h4>Priority colors</h4>
+          <p className="hint">The bars on cards and the priority buttons. The ⌥1 / ⌥2 / ⌥3 shortcuts keep their order whatever colors you choose.</p>
+          {[1, 2, 3].map((n) => (
+            <ColorSetting
+              key={n}
+              id={`custom-prio-${n}`}
+              title={PRIORITY_NAMES[n]}
+              value={priorityColors[n]}
+              defaultValue={DEFAULT_PRIORITY_COLORS[n]}
+              swatches={PRIORITY_SWATCHES[n]}
+              onSave={(hex) => actions.saveSettings(settings, { priorityColors: { ...priorityColors, [n]: hex } })}
+            />
+          ))}
+        </div>
 
         <h3>Your data</h3>
         <p className="hint">

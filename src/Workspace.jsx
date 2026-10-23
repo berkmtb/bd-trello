@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { createActions } from './store/actions.js';
-import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR, DEFAULT_ADD_LIST_COLOR, DEFAULT_NEW_CARD_COLOR } from './lib/core.js';
+import { rank, sortCards, todayKey, DEFAULT_BLOCK_COLOR, DEFAULT_ADD_LIST_COLOR, DEFAULT_NEW_CARD_COLOR, DEFAULT_PRIORITY_COLORS } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
-import { applyTheme } from './lib/themes.js';
+import { applyTheme, applyPriorityColors } from './lib/themes.js';
 import Header from './components/Header.jsx';
 import Board from './components/Board.jsx';
 import Calendar, { PX_PER_MIN, DEFAULT_DURATION } from './components/Calendar.jsx';
@@ -69,6 +69,9 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const addListColor = settings.addListColor || DEFAULT_ADD_LIST_COLOR;
   const newCardColor = settings.newCardColor || DEFAULT_NEW_CARD_COLOR;
   useEffect(() => { if (settingsDocs.length || settings.theme) applyTheme(settings.theme); }, [settings.theme, settingsDocs.length]);
+  const priorityColors = { ...DEFAULT_PRIORITY_COLORS, ...(settings.priorityColors || {}) };
+  const prioKey = JSON.stringify(settings.priorityColors || null);
+  useEffect(() => { if (settingsDocs.length) applyPriorityColors(JSON.parse(prioKey)); }, [prioKey, settingsDocs.length]);
 
   // Full backup (all boards, archived cards included) as one Trello-format JSON file.
   const backupAll = async () => {
@@ -426,6 +429,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           defaultBlockColor={defaultBlockColor}
           addListColor={addListColor}
           newCardColor={newCardColor}
+          priorityColors={priorityColors}
           actions={actions}
           boardCount={sortedBoards.length}
           backupStale={backupStale}

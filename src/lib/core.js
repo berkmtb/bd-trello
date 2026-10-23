@@ -5,7 +5,10 @@ export const PRIORITIES = [
   { value: 2, name: 'Orange', trello: 'orange', hex: '#f76b15', key: '2' },
   { value: 3, name: 'Yellow', trello: 'yellow', hex: '#f2c200', key: '3' },
 ];
-export const priorityHex = (p) => PRIORITIES.find((x) => x.value === p)?.hex;
+/** Default priority colors (Settings/themes can override). */
+export const DEFAULT_PRIORITY_COLORS = { 1: '#e5484d', 2: '#f76b15', 3: '#f2c200' };
+/** CSS color for a priority: a variable, so Settings/theme changes repaint instantly everywhere. */
+export const priorityHex = (p) => (PRIORITIES.some((x) => x.value === p) ? `var(--prio-${p})` : undefined);
 
 /** List colors (used to fill calendar blocks). No red/orange/yellow, so they never read as a priority. */
 export const LIST_COLORS = [
