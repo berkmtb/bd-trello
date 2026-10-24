@@ -146,18 +146,29 @@ export function createActions(be) {
       const patch = { listId: toListId, boardId: toBoardId, order: bottomOf(cards, toListId, card.priority, card.id), updatedAt: Date.now() };
       commit([upd('cards', card.id, patch)]);
     },
+    /** Finish a card: archived, flagged as completed (shown in the Archive drawer). */
+    completeCard: (id) => commit([upd('cards', id, { archived: true, archivedAt: Date.now(), completed: true, updatedAt: Date.now() })]),
     archiveCard: (id) => commit([upd('cards', id, { archived: true, archivedAt: Date.now(), updatedAt: Date.now() })]),
     restoreCard(card, lists, cards) {
       const boardLists = lists.filter((l) => l.boardId === card.boardId).sort((a, b) => a.order - b.order);
       const listId = boardLists.some((l) => l.id === card.listId) ? card.listId : boardLists[0]?.id;
       if (!listId) { alert('Add a list to this board first, then restore the card.'); return; }
       commit([upd('cards', card.id, {
-        archived: false, archivedAt: null, listId, order: topOf(cards, listId, card.priority, card.id), updatedAt: Date.now(),
+        archived: false, archivedAt: null, completed: false, listId, order: topOf(cards, listId, card.priority, card.id), updatedAt: Date.now(),
       })]);
     },
     async deleteCard(cardId) {
       const blocks = await fetchOnce('blocks', [['cardId', '==', cardId]]);
       await commit([...blocks.map((b) => del('blocks', b.id)), del('cards', cardId)]);
+    },
+
+    /** Permanently delete many cards (and their calendar blocks). */
+    async deleteCards(cardIds) {
+      for (let i = 0; i < cardIds.length; i += 100) {
+        const chunk = cardIds.slice(i, i + 100);
+        const blockLists = await Promise.all(chunk.map((id) => fetchOnce('blocks', [['cardId', '==', id]])));
+        await commit([...blockLists.flat().map((b) => del('blocks', b.id)), ...chunk.map((id) => del('cards', id))]);
+      }
     },
 
     // ---------- calendar blocks ----------

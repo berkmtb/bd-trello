@@ -5,7 +5,7 @@ import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog, promptDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, focusListId, onFocus, phone }) {
+export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, onComplete, focusListId, onFocus, phone }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
@@ -50,6 +50,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
         isDragSource={list.id === draggingListId}
         hoveredRef={hoveredRef}
         onOpenCard={onOpenCard}
+        onComplete={onComplete}
         onFocus={onFocus}
       />,
     );
@@ -123,6 +124,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
             isDragSource={false}
             hoveredRef={hoveredRef}
             onOpenCard={onOpenCard}
+            onComplete={onComplete}
           />
         </div>
       </div>
@@ -160,7 +162,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
   );
 }
 
-function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard }) {
+function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard, onComplete }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -193,6 +195,7 @@ function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor,
         register={register}
         hoveredRef={hoveredRef}
         onOpen={onOpenCard}
+        onComplete={onComplete}
         isDragSource={c.id === draggingId}
       />,
     );

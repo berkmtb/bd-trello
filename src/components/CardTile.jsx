@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { priorityHex, checklistProgress, hasText, fmtTime } from '../lib/core.js';
 import { Icon } from './Icon.jsx';
 
-export function CardFace({ card, block }) {
+export function CardFace({ card, block, doneBtn }) {
   const color = priorityHex(card.priority);
   const progress = checklistProgress(card.desc);
   const desc = hasText(card.desc);
   return (
     <div className="card-face">
       {color && <span className="prio-bar" style={{ background: color }} />}
-      <div className="card-title">{card.title}</div>
+      <div className="title-row">{doneBtn}<div className="card-title">{card.title}</div></div>
       {(desc || progress || block) && (
         <div className="badges">
           {block && (
@@ -30,7 +30,18 @@ export function CardFace({ card, block }) {
   );
 }
 
-export default function CardTile({ card, block, register, hoveredRef, onOpen, isDragSource }) {
+const stop = (e) => e.stopPropagation();
+
+export default function CardTile({ card, block, register, hoveredRef, onOpen, onComplete, isDragSource }) {
+  const [completing, setCompleting] = useState(false);
+  const timer = useRef(null);
+  const finish = (e) => {
+    e.stopPropagation();
+    if (completing) return;
+    setCompleting(true);
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    timer.current = setTimeout(() => onComplete(card), reduce ? 80 : 650);
+  };
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: `card:${card.id}`,
     data: { kind: 'card', id: card.id },
@@ -38,7 +49,7 @@ export default function CardTile({ card, block, register, hoveredRef, onOpen, is
   return (
     <div
       ref={(el) => { setNodeRef(el); register(card.id, el); }}
-      className={`card ${isDragSource ? 'drag-source' : ''}`}
+      className={`card ${isDragSource ? 'drag-source' : ''} ${completing ? 'completing' : ''}`}
       data-card-id={card.id}
       onPointerEnter={() => { hoveredRef.current = card.id; }}
       onPointerLeave={() => { if (hoveredRef.current === card.id) hoveredRef.current = null; }}
@@ -48,7 +59,27 @@ export default function CardTile({ card, block, register, hoveredRef, onOpen, is
       tabIndex={-1}
       role="button"
     >
-      <CardFace card={card} block={block} />
+      <CardFace
+        card={card}
+        block={block}
+        doneBtn={onComplete && (
+          <button
+            type="button"
+            className="done-btn"
+            aria-label="Mark complete"
+            title="Mark complete"
+            onClick={finish}
+            onMouseDown={stop}
+            onTouchStart={stop}
+            onPointerDown={stop}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <circle className="ring" cx="12" cy="12" r="9" />
+              <path className="tick" d="M7.5 12.5l3 3 6-6.5" />
+            </svg>
+          </button>
+        )}
+      />
     </div>
   );
 }

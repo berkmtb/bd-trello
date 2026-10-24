@@ -125,6 +125,13 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     showToast(`Archived “${card.title}”`, () => actions.updateCard(card.id, { archived: false, archivedAt: null }));
   }, [actions, showToast]);
 
+  const complete = useCallback((card) => {
+    actions.completeCard(card.id);
+    setOpenCardId((id) => (id === card.id ? null : id));
+    if (hoveredRef.current === card.id) hoveredRef.current = null;
+    showToast(`Completed “${card.title}”`, () => actions.updateCard(card.id, { archived: false, archivedAt: null, completed: false }));
+  }, [actions, showToast]);
+
   // ---------- keyboard shortcuts ----------
   const latest = useRef();
   latest.current = { cards, cardsById, openCardId, archive, boardLists };
@@ -357,6 +364,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               recentDrag={recentDrag}
               hoveredRef={hoveredRef}
               onOpenCard={openCardSafe}
+              onComplete={complete}
               phone={phone}
               focusListId={focusMap[board.id] || null}
               onFocus={setFocus}
