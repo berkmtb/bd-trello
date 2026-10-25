@@ -13,7 +13,7 @@ import ArchiveDrawer from './components/ArchiveDrawer.jsx';
 import { CardFace } from './components/CardTile.jsx';
 import Toast from './components/Toast.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
-import { DialogHost, promptDialog } from './components/Dialog.jsx';
+import { DialogHost, promptDialog, confirmDialog } from './components/Dialog.jsx';
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -132,9 +132,18 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     showToast(`Completed “${card.title}”`, () => actions.updateCard(card.id, { archived: false, archivedAt: null, completed: false }));
   }, [actions, showToast]);
 
+  const removeCard = useCallback(async (card) => {
+    const ok = await confirmDialog(`Delete “${card.title}”?`, "This can't be undone. Archive instead if you might need it later.", { confirmLabel: 'Delete card', danger: true });
+    if (!ok) return;
+    setOpenCardId((id) => (id === card.id ? null : id));
+    if (hoveredRef.current === card.id) hoveredRef.current = null;
+    await actions.deleteCard(card.id);
+    showToast(`Deleted “${card.title}”`);
+  }, [actions, showToast]);
+
   // ---------- keyboard shortcuts ----------
   const latest = useRef();
-  latest.current = { cards, cardsById, openCardId, archive, boardLists };
+  latest.current = { cards, cardsById, openCardId, archive, removeCard, boardLists };
   useEffect(() => {
     const onKey = (e) => {
       const st = latest.current;
@@ -150,10 +159,15 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
         else actions.setPriority(card, act, st.cards);
         return;
       }
-      if (!e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'c') {
-        if (isEditable(e.target) || !card) return;
+      if (!e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        const k = e.key.toLowerCase();
+        const isArchive = k === 'c' || k === 'e';
+        const isDelete = e.key === 'Delete' || e.key === 'Backspace';
+        if (!isArchive && !isDelete) return;
+        // Not while typing, with a dialog/drawer open on top, or without a card under the mouse.
+        if (isEditable(e.target) || !card || document.querySelector('.dialog-backdrop, .drawer-backdrop')) return;
         e.preventDefault();
-        st.archive(card);
+        if (isArchive) st.archive(card); else st.removeCard(card);
       }
     };
     window.addEventListener('keydown', onKey, true);
