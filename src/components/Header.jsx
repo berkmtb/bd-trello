@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon.jsx';
-import { boardToTrello, downloadJson, importBoardOps, parseBackup, safeName } from '../lib/backup.js';
+import { appendBoardOps, boardToTrello, downloadJson, importBoardOps, parseBackup, safeName } from '../lib/backup.js';
 import { todayKey } from '../lib/core.js';
 import { ask, promptDialog } from './Dialog.jsx';
 
@@ -22,6 +22,7 @@ export default function Header({ phone, boards, board, lists, actions, onSelectB
   const [backupMenu, setBackupMenu] = useDropdown();
   const [userMenu, setUserMenu] = useDropdown();
   const fileRef = useRef(null);
+  const intoRef = useRef(null);
 
   const exportBoardData = async (b) => {
     const [cards, blocks] = await Promise.all([
@@ -55,6 +56,27 @@ export default function Header({ phone, boards, board, lists, actions, onSelectB
       }
       if (firstId) onSelectBoard(firstId);
       showToast(`Imported ${srcs.length} board${srcs.length === 1 ? '' : 's'} (${total} cards) as new board${srcs.length === 1 ? '' : 's'}`);
+    } catch (err) {
+      showToast('Import failed: ' + err.message);
+    }
+  };
+
+  const onImportInto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !board) return;
+    try {
+      const srcs = parseBackup(JSON.parse(await file.text()));
+      const existingCards = await actions.fetchOnce('cards', [['boardId', '==', board.id]]);
+      let lc = 0, mc = 0, cc = 0;
+      let curLists = lists.filter((l) => l.boardId === board.id);
+      for (const src of srcs) {
+        const r = appendBoardOps(src, board, curLists, existingCards.filter((c) => !c.archived), actions.newId);
+        await actions.commitRaw(r.ops);
+        lc += r.newLists; mc += r.mergedLists; cc += r.cards;
+        curLists = [...curLists, ...r.ops.filter((o) => o.coll === 'lists').map((o) => ({ id: o.id, ...o.data }))];
+      }
+      showToast(`Added ${cc} cards to “${board.name}” (${lc} new lists, ${mc} merged)`);
     } catch (err) {
       showToast('Import failed: ' + err.message);
     }
@@ -123,10 +145,12 @@ export default function Header({ phone, boards, board, lists, actions, onSelectB
               <button onClick={backupAll} disabled={!boards.length}>Back up all boards (.json)</button>
               <hr />
               <button onClick={() => { setBackupMenu(false); fileRef.current?.click(); }}>Import Trello export or backup…</button>
-              <div className="menu-note">Files use Trello's export format. Imports are added as new boards; nothing is overwritten.</div>
+              {board && <button onClick={() => { setBackupMenu(false); intoRef.current?.click(); }}>Add Trello export to this board…</button>}
+              <div className="menu-note">Files use Trello's export format. “Import” makes new boards; “Add to this board” appends lists and cards (same-named lists are merged). Nothing is overwritten.</div>
             </div>
           )}
           <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onImportFile} />
+          <input ref={intoRef} type="file" accept="application/json,.json" hidden onChange={onImportInto} data-testid="import-into" />
         </div>
         {!phone && <button className={`top-btn ${calOpen ? 'on' : ''}`} onClick={onToggleCal}><Icon name="calendar" /> Calendar</button>}
         <button className="top-btn" onClick={onOpenSettings}><Icon name="sliders" /><span className="lbl"> Settings</span>{backupStale && <span className="notice-dot" title="Time for a backup" />}</button>

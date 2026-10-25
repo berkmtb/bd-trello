@@ -104,7 +104,8 @@ export function importBoardOps(src, newId, boardOrder) {
   ops.push({ op: 'set', coll: 'boards', id: boardId, data: { name: src.name || 'Imported board', order: boardOrder, createdAt: now } });
   const labelPriority = new Map();
   for (const l of src.labels || []) {
-    const p = PRIORITIES.find((x) => x.trello === l.color);
+    const base = String(l.color || '').replace(/_(dark|light)$/, '');
+    const p = PRIORITIES.find((x) => x.trello === base);
     if (p) labelPriority.set(l.id, p.value);
   }
   const openLists = (src.lists || []).filter((l) => !l.closed).sort((a, b) => a.pos - b.pos);
@@ -148,3 +149,43 @@ export function importBoardOps(src, newId, boardOrder) {
   return { ops, name: src.name, cards: count };
 }
 
+
+/**
+ * Add one parsed board's open lists and cards to an EXISTING board.
+ * Lists whose name matches an existing list (case-insensitive) are merged into it;
+ * others are appended to the right. Cards go to the bottom of their priority band.
+ * Archived cards from the source are skipped.
+ */
+export function appendBoardOps(src, target, existingLists, existingCards, newId) {
+  const { ops } = importBoardOps(src, newId, 0);
+  const boardId = target.id;
+  const srcBoardId = ops[0].id;
+  const nameToId = new Map(existingLists.map((l) => [l.name.trim().toLowerCase(), l.id]));
+  let nextOrder = existingLists.length ? Math.max(...existingLists.map((l) => l.order ?? 0)) + 1 : 0;
+  const listRemap = new Map();
+  const out = [];
+  let newLists = 0, mergedLists = 0, cardCount = 0;
+  for (const o of ops) {
+    if (o.coll === 'lists') {
+      const key = (o.data.name || '').trim().toLowerCase();
+      if (nameToId.has(key)) { listRemap.set(o.id, nameToId.get(key)); mergedLists++; }
+      else {
+        listRemap.set(o.id, o.id); nameToId.set(key, o.id);
+        out.push({ ...o, data: { ...o.data, boardId, order: nextOrder++ } }); newLists++;
+      }
+    }
+  }
+  const maxOrder = new Map();
+  for (const c of existingCards) maxOrder.set(c.listId, Math.max(maxOrder.get(c.listId) ?? 0, c.order ?? 0));
+  for (const o of ops) {
+    if (o.coll !== 'cards' || o.data.archived) continue;
+    const listId = listRemap.get(o.data.listId);
+    if (!listId) continue;
+    const order = (maxOrder.get(listId) ?? 0) + 1;
+    maxOrder.set(listId, order);
+    out.push({ ...o, data: { ...o.data, boardId, listId, order } });
+    cardCount++;
+  }
+  void srcBoardId;
+  return { ops: out, newLists, mergedLists, cards: cardCount };
+}
