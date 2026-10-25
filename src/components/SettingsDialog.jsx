@@ -267,7 +267,7 @@ export default function SettingsDialog({ settings, board, boards, look, backend,
           <li><span className="keys"><kbd>⌥1</kbd><kbd>⌥2</kbd><kbd>⌥3</kbd></span><span>Set priority red / orange / yellow (press again to clear)</span></li>
           <li><span className="keys"><kbd>⌥0</kbd></span><span>Clear priority</span></li>
           <li><span className="keys"><kbd>E</kbd> <kbd>C</kbd> or <kbd>⌥E</kbd></span><span>Archive the card (E and C are ignored while typing)</span></li>
-          <li><span className="keys"><kbd>Delete</kbd></span><span>Delete the card permanently (asks to confirm)</span></li>
+          <li><span className="keys"><kbd>Delete</kbd></span><span>Delete the card (Undo appears briefly)</span></li>
         </ul>
 
         <div className="dialog-actions">

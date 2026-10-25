@@ -22,7 +22,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
    - **Option+0** → remove priority
    - **Option+E** → archive (works even while typing in the description)
    - **E** or **C** (no modifier) → archive, ignored while typing in any text field (C = Trello muscle memory)
-   - **Delete / Backspace** (no modifier) → permanently delete the card after a confirm dialog; ignored while typing or while a dialog/drawer is open
+   - **Delete / Backspace** (no modifier) → delete the hovered/open card with **no dialog**; the toast's Undo re-creates the card and its calendar blocks (`actions.deleteCardUndoable`). The Delete button inside the card dialog still asks to confirm. Ignored while typing or while a dialog/drawer is open
    - Cmd+1–3 was rejected: browsers reserve Cmd+number for tab switching.
    - Uses `e.code` (Digit1, KeyE) with preventDefault in a capture-phase window listener so ¡/™/£ and the Option+E accent dead key don't get typed. **Unverified on a real Mac**: whether Option+E inside the description leaves an accent on the next letter. Fallback if it does: Option+A or Option+X.
    - Changing priority puts the card at the **top** of its new band. New cards go to the bottom of the none band.

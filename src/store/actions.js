@@ -162,6 +162,15 @@ export function createActions(be) {
       await commit([...blocks.map((b) => del('blocks', b.id)), del('cards', cardId)]);
     },
 
+    /** Delete a card and its calendar blocks; resolves to an undo function that puts everything back. */
+    async deleteCardUndoable(card) {
+      const blocks = await fetchOnce('blocks', [['cardId', '==', card.id]]);
+      await commit([...blocks.map((b) => del('blocks', b.id)), del('cards', card.id)]);
+      return () => {
+        const { id, ...cardData } = card;
+        return commit([set('cards', id, cardData), ...blocks.map(({ id: bid, ...b }) => set('blocks', bid, b))]);
+      };
+    },
     /** Permanently delete many cards (and their calendar blocks). */
     async deleteCards(cardIds) {
       for (let i = 0; i < cardIds.length; i += 100) {

@@ -13,7 +13,7 @@ import ArchiveDrawer from './components/ArchiveDrawer.jsx';
 import { CardFace } from './components/CardTile.jsx';
 import Toast from './components/Toast.jsx';
 import SettingsDialog from './components/SettingsDialog.jsx';
-import { DialogHost, promptDialog, confirmDialog } from './components/Dialog.jsx';
+import { DialogHost, promptDialog } from './components/Dialog.jsx';
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -132,13 +132,12 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     showToast(`Completed “${card.title}”`, () => actions.updateCard(card.id, { archived: false, archivedAt: null, completed: false }));
   }, [actions, showToast]);
 
+  // Delete without a dialog; the toast offers Undo (re-creates the card and its calendar blocks).
   const removeCard = useCallback(async (card) => {
-    const ok = await confirmDialog(`Delete “${card.title}”?`, "This can't be undone. Archive instead if you might need it later.", { confirmLabel: 'Delete card', danger: true });
-    if (!ok) return;
     setOpenCardId((id) => (id === card.id ? null : id));
     if (hoveredRef.current === card.id) hoveredRef.current = null;
-    await actions.deleteCard(card.id);
-    showToast(`Deleted “${card.title}”`);
+    const undo = await actions.deleteCardUndoable(card);
+    showToast(`Deleted “${card.title}”`, undo);
   }, [actions, showToast]);
 
   // ---------- keyboard shortcuts ----------
