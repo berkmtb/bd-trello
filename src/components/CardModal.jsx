@@ -76,6 +76,7 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
     } : {},
   }) || {};
 
+  const inToday = isTodayList(boardLists(card.boardId).find((l) => l.id === card.listId));
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { flushDesc(); onClose(); } }}>
       <div className="modal" role="dialog" aria-label="Card details">
@@ -106,25 +107,23 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
           </label>
           <label className="meta-field">
             <span>List</span>
-            <select value={moveBoard === card.boardId ? card.listId : ''} onChange={(e) => {
-              if (e.target.value) {
-                const bl = boardLists(moveBoard);
-                actions.moveCardTo(card, moveBoard, e.target.value, cards, originPatch(boardLists(card.boardId).find((l) => l.id === card.listId), bl.find((l) => l.id === e.target.value)));
-              }
-            }}>
-              {moveBoard !== card.boardId && <option value="">Choose a list…</option>}
-              {boardLists(moveBoard).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </label>
-          {isTodayList(boardLists(card.boardId).find((l) => l.id === card.listId)) && (
-            <label className="meta-field">
-              <span>Tag as from list</span>
-              <select value={card.fromListId || ''} onChange={(e) => actions.updateCard(card.id, { fromListId: e.target.value || null })}>
-                <option value="">None</option>
-                {boardLists(card.boardId).filter((l) => !isTodayList(l)).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            {inToday && moveBoard === card.boardId ? (
+              // In Today's Priorities the card stays put; this just tags where it came from.
+              <select value={card.fromListId || card.listId} onChange={(e) => actions.updateCard(card.id, { fromListId: e.target.value === card.listId ? null : e.target.value })}>
+                {boardLists(moveBoard).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-            </label>
-          )}
+            ) : (
+              <select value={moveBoard === card.boardId ? card.listId : ''} onChange={(e) => {
+                if (e.target.value) {
+                  const bl = boardLists(moveBoard);
+                  actions.moveCardTo(card, moveBoard, e.target.value, cards, originPatch(boardLists(card.boardId).find((l) => l.id === card.listId), bl.find((l) => l.id === e.target.value)));
+                }
+              }}>
+                {moveBoard !== card.boardId && <option value="">Choose a list…</option>}
+                {boardLists(moveBoard).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            )}
+          </label>
         </div>
 
         <div className="prio-row">

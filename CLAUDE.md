@@ -48,7 +48,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 27. **Pan the board**: click-and-drag the empty board background (gaps and area below lists; `panStart` in `Board.jsx`) to scroll sideways. Not active in focus/phone views.
 28. **Today's Priorities (special list)**: any list named "Today's Priorities" (`isTodayList` in `core.js`) is forced first (lowest `order`, auto-fixed by a Workspace effect), cannot be dragged/moved, and others cannot move above it. Cards moved into it from another list get `fromListId` (`originPatch`), shown as a tiny tag at the card's bottom-right; moving a card to any other list clears it. Dropping such a card on empty space (not a list, not the calendar) returns it to the origin list (bottom of its band).
 29. **Today text color**: per-board `look.todayTextColor` (Settings → Customize → "Today's Priorities text color"); colors only the Today list title (not its cards) via `--today-text`. Unset = follows the board's default time block color (`resolveLook().todayTextColor`).
-30. **Tag as from list**: in the card dialog, a card in the Today list shows a "Tag as from list" dropdown that sets `fromListId` without moving the card (used for cards created in Today or to correct the tag).
+30. **List dropdown in Today**: in the card dialog, for a card in the Today list the List dropdown does NOT move the card; it sets `fromListId` (choosing Today itself clears it). The card leaves Today only by dragging (onto a list, or empty space → origin). Board dropdown still moves across boards.
 20. **Small branding choices**: page/tab title is "bd tasks" (`index.html`); the top-bar user avatar (initials) is solid black, no outline (`.avatar` in `styles.css`).
 
 ## Architecture
