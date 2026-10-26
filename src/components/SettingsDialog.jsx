@@ -276,6 +276,16 @@ export default function SettingsDialog({ settings, board, boards, look, backend,
           </button>
         </div>
 
+        <h3>Today's Priorities list</h3>
+        <p className="hint">A list named “Today's Priorities” is special:</p>
+        <ul className="shortcut-list">
+          <li><span>It always stays first, right next to the calendar, and can't be moved.</span></li>
+          <li><span>Drag a card into it from another list and a tiny tag at the card's bottom-right shows the list it came from.</span></li>
+          <li><span>Drag that card off and drop it on empty space (not on a list or the calendar) and it returns to the list on its tag. Dropping it on a specific list moves it there instead.</span></li>
+          <li><span>To keep a card in Today but tag it with a list, open the card and use “Tag as from list”. Choose None to clear the tag.</span></li>
+          <li><span>Moving a card to another list with the List dropdown clears the tag.</span></li>
+        </ul>
+
         <h3>Keyboard shortcuts</h3>
         <p className="hint">Hover a card (or open it), then press:</p>
         <ul className="shortcut-list">
