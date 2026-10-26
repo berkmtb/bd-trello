@@ -620,4 +620,4 @@ body { overscroll-behavior: none; }
 .from-tag { position: absolute; right: 0; bottom: -2px; max-width: 70%; font-size: 10px; line-height: 1; color: var(--muted); opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 
 /* Today's Priorities text color (Settings → Customize) */
-.list.today-list .list-name, .list.today-list .card-title { color: var(--today-text, var(--text-strong)); }
+.list.today-list .list-name { color: var(--today-text, var(--text-strong)); }
