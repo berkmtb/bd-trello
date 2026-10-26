@@ -64,6 +64,7 @@ export function resolveLook(board) {
     defaultBlockColor: l.defaultBlockColor || t.colors.defaultBlockColor,
     addListColor: l.addListColor || t.colors.addListColor,
     newCardColor: l.newCardColor || t.colors.newCardColor,
+    todayTextColor: l.todayTextColor || l.defaultBlockColor || t.colors.defaultBlockColor,
     priorityColors: { ...t.priority, ...(l.priorityColors || {}) },
     backgroundId: l.backgroundId || null,
   };

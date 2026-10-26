@@ -211,6 +211,21 @@ export default function SettingsDialog({ settings, board, boards, look, backend,
             />
 
             <ColorSetting
+              id="custom-today-text-color"
+              title="Today's Priorities text color"
+              hint="The list title and card titles in the “Today's Priorities” list. Matches the time block color unless you pick one."
+              value={curLook.todayTextColor}
+              defaultValue={look.defaultBlockColor}
+              swatches={COMMON_SWATCHES}
+              onSave={(hex) => saveLook({ todayTextColor: hex.toLowerCase() === look.defaultBlockColor.toLowerCase() ? null : hex })}
+              preview={(c) => (
+                <div className="settings-preview add-list-preview" style={{ background: 'var(--list)', color: c }}>
+                  <span className="t">Today's Priorities · Call the lender</span>
+                </div>
+              )}
+            />
+
+            <ColorSetting
               id="custom-add-list-color"
               title="“Add another list” button color"
               hint="The button at the end of this board's lists."

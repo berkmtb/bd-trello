@@ -65,7 +65,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
   const settings = settingsDocs.find((d) => d.id === 'prefs') || {};
   // Appearance is per board: theme, colors and background all come from the current board's `look`.
   const look = useMemo(() => resolveLook(board), [board]);
-  const { defaultBlockColor, addListColor, newCardColor, priorityColors } = look;
+  const { defaultBlockColor, addListColor, newCardColor, priorityColors, todayTextColor } = look;
   const prioKey = JSON.stringify(priorityColors);
   useEffect(() => { if (board) applyTheme(look.themeId); }, [board, look.themeId]);
   useEffect(() => { if (board) applyPriorityColors(JSON.parse(prioKey)); }, [board, prioKey]);
@@ -379,6 +379,7 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
               defaultColor={defaultBlockColor}
               addListColor={addListColor}
               newCardColor={newCardColor}
+              todayColor={todayTextColor}
               cards={cards}
               blocks={blocks}
               date={date}

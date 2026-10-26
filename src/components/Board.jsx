@@ -5,7 +5,7 @@ import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog, promptDialog } from './Dialog.jsx';
 
-export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, onComplete, focusListId, onFocus, phone }) {
+export default function Board({ board, lists, defaultColor, addListColor, newCardColor, todayColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, onComplete, focusListId, onFocus, phone }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   // Click-and-drag on the empty board background to pan sideways.
@@ -52,6 +52,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
         key={list.id}
         defaultColor={defaultColor}
         newCardColor={newCardColor}
+        todayColor={todayColor}
         list={list}
         isFirst={i === 0 || (i === 1 && isTodayList(lists[0]))}
         isLast={i === lists.length - 1}
@@ -126,6 +127,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
             onFocus={onFocus}
             defaultColor={defaultColor}
             newCardColor={newCardColor}
+        todayColor={todayColor}
             list={focusList}
             isFirst={fi === 0 || (fi === 1 && isTodayList(lists[0]))}
             isLast={fi === lists.length - 1}
@@ -178,7 +180,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
   );
 }
 
-function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard, onComplete }) {
+function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor, todayColor, isFirst, isLast, allLists, cards, blockByCard, actions, drag, register, registerList, recentDrag, isDragSource, hoveredRef, onOpenCard, onComplete }) {
   const { setNodeRef, isOver } = useDroppable({ id: `list:${list.id}`, data: { type: 'list', listId: list.id } });
   const listCards = useMemo(() => sortCards(cards.filter((c) => c.listId === list.id)), [cards, list.id]);
   const [editingName, setEditingName] = useState(false);
@@ -236,8 +238,8 @@ function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor,
   return (
     <section
       ref={sectionRef}
-      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''} ${isDragSource ? 'drag-source' : ''} ${focused ? 'focused' : ''}`}
-      style={list.color ? { '--list-color': list.color } : undefined}
+      className={`list ${isOver && drag?.kind === 'card' ? 'drop-target' : ''} ${list.color ? 'has-color' : ''} ${isDragSource ? 'drag-source' : ''} ${focused ? 'focused' : ''} ${isTodayList(list) ? 'today-list' : ''}`}
+      style={{ ...(list.color ? { '--list-color': list.color } : {}), ...(isTodayList(list) && todayColor ? { '--today-text': todayColor } : {}) }}
     >
       <header className="list-head" ref={setHandleRef} {...(editingName || focused ? {} : handleListeners)}>
         {editingName ? (
