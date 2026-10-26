@@ -4,7 +4,7 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { PRIORITIES, originPatch } from '../lib/core.js';
+import { PRIORITIES, originPatch, isTodayList } from '../lib/core.js';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
@@ -116,6 +116,15 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
               {boardLists(moveBoard).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </label>
+          {isTodayList(boardLists(card.boardId).find((l) => l.id === card.listId)) && (
+            <label className="meta-field">
+              <span>Tag as from list</span>
+              <select value={card.fromListId || ''} onChange={(e) => actions.updateCard(card.id, { fromListId: e.target.value || null })}>
+                <option value="">None</option>
+                {boardLists(card.boardId).filter((l) => !isTodayList(l)).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </label>
+          )}
         </div>
 
         <div className="prio-row">
