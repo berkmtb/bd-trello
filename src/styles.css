@@ -608,3 +608,8 @@ body { overscroll-behavior: none; }
 .archived-item.selected { box-shadow: 0 0 0 1.5px var(--accent-2); }
 .ai-check { margin-top: 3px; flex: none; width: 16px; height: 16px; accent-color: var(--accent-2); }
 .archived-item { cursor: default; }
+
+/* Drag the empty board background to scroll sideways */
+.board.pannable { cursor: grab; }
+.board.pannable.panning { cursor: grabbing; user-select: none; }
+.board.pannable .list { cursor: auto; }

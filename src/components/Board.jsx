@@ -8,6 +8,22 @@ import { confirmDialog, promptDialog } from './Dialog.jsx';
 export default function Board({ board, lists, defaultColor, addListColor, newCardColor, cards, blocks, date, actions, drag, cardEls, listEls, recentDrag, hoveredRef, onOpenCard, onComplete, focusListId, onFocus, phone }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
+  // Click-and-drag on the empty board background to pan sideways.
+  const panStart = (e) => {
+    const el = e.currentTarget;
+    if (e.button !== 0 || e.target !== el) return;
+    const startX = e.clientX, startLeft = el.scrollLeft;
+    el.classList.add('panning');
+    const move = (ev) => { el.scrollLeft = startLeft - (ev.clientX - startX); };
+    const up = () => {
+      el.classList.remove('panning');
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    e.preventDefault();
+  };
   const register = (id, el) => { if (el) cardEls.current.set(id, el); else cardEls.current.delete(id); };
 
   // Earliest block per card on the calendar day being shown.
@@ -133,7 +149,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
 
   return (
     <div className="board-wrap">
-    <div className="board">
+    <div className="board pannable" onMouseDown={panStart}>
       {listItems}
       <div className="list add-list">
         {adding ? (
