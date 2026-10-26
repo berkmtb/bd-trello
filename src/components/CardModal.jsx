@@ -4,7 +4,7 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { PRIORITIES } from '../lib/core.js';
+import { PRIORITIES, originPatch } from '../lib/core.js';
 import { Icon } from './Icon.jsx';
 import { confirmDialog } from './Dialog.jsx';
 
@@ -99,7 +99,7 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
               setMoveBoard(b);
               if (b === card.boardId) return;
               const first = boardLists(b)[0];
-              if (first) actions.moveCardTo(card, b, first.id, cards);
+              if (first) actions.moveCardTo(card, b, first.id, cards, { fromListId: null });
             }}>
               {boards.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
@@ -107,7 +107,10 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
           <label className="meta-field">
             <span>List</span>
             <select value={moveBoard === card.boardId ? card.listId : ''} onChange={(e) => {
-              if (e.target.value) actions.moveCardTo(card, moveBoard, e.target.value, cards);
+              if (e.target.value) {
+                const bl = boardLists(moveBoard);
+                actions.moveCardTo(card, moveBoard, e.target.value, cards, originPatch(boardLists(card.boardId).find((l) => l.id === card.listId), bl.find((l) => l.id === e.target.value)));
+              }
             }}>
               {moveBoard !== card.boardId && <option value="">Choose a list…</option>}
               {boardLists(moveBoard).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}

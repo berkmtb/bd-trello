@@ -613,3 +613,8 @@ body { overscroll-behavior: none; }
 .board.pannable { cursor: grab; }
 .board.pannable.panning { cursor: grabbing; user-select: none; }
 .board.pannable .list { cursor: auto; }
+
+/* Today's Priorities: origin list tag */
+.card-face { position: relative; }
+.card-face.has-from { padding-bottom: 12px; }
+.from-tag { position: absolute; right: 0; bottom: -2px; max-width: 70%; font-size: 10px; line-height: 1; color: var(--muted); opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }

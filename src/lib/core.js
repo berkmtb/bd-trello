@@ -96,3 +96,12 @@ export function checklistProgress(html) {
 }
 
 export const hasText = (html) => Boolean(html && html.replace(/<[^>]*>/g, '').trim());
+
+/** The special "Today's Priorities" list (matched by name; straight or curly apostrophe). */
+export const isTodayList = (l) => !!l && /^today[’']?s priorities$/i.test((l.name || '').trim());
+/** Extra card fields when moving a card between lists: remember where it came from when entering the Today list. */
+export function originPatch(fromList, toList) {
+  if (!toList) return {};
+  if (isTodayList(toList)) return isTodayList(fromList) || !fromList ? {} : { fromListId: fromList.id };
+  return { fromListId: null };
+}

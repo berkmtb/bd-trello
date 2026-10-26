@@ -120,9 +120,9 @@ export function createActions(be) {
     },
 
     /** Place a card in a list at an index within its own priority band. */
-    placeCard(card, toListId, bandIndex, cards, toBoardId) {
+    placeCard(card, toListId, bandIndex, cards, toBoardId, extra = {}) {
       const order = orderAt(cards, toListId, card.priority, bandIndex, card.id);
-      const patch = { listId: toListId, order, updatedAt: Date.now() };
+      const patch = { listId: toListId, order, updatedAt: Date.now(), ...extra };
       const ops = [];
       if (toBoardId && toBoardId !== card.boardId) {
         patch.boardId = toBoardId;
@@ -142,8 +142,8 @@ export function createActions(be) {
       commit(ops);
     },
     /** Move to the bottom of the card's band in another list or board. */
-    moveCardTo(card, toBoardId, toListId, cards) {
-      const patch = { listId: toListId, boardId: toBoardId, order: bottomOf(cards, toListId, card.priority, card.id), updatedAt: Date.now() };
+    moveCardTo(card, toBoardId, toListId, cards, extra = {}) {
+      const patch = { listId: toListId, boardId: toBoardId, order: bottomOf(cards, toListId, card.priority, card.id), updatedAt: Date.now(), ...extra };
       commit([upd('cards', card.id, patch)]);
     },
     /** Finish a card: archived, flagged as completed (shown in the Archive drawer). */

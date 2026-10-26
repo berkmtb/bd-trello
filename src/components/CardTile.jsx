@@ -3,12 +3,12 @@ import { useDraggable } from '@dnd-kit/core';
 import { priorityHex, checklistProgress, hasText, fmtTime } from '../lib/core.js';
 import { Icon } from './Icon.jsx';
 
-export function CardFace({ card, block, doneBtn }) {
+export function CardFace({ card, block, doneBtn, fromName }) {
   const color = priorityHex(card.priority);
   const progress = checklistProgress(card.desc);
   const desc = hasText(card.desc);
   return (
-    <div className="card-face">
+    <div className={`card-face ${fromName ? 'has-from' : ''}`}>
       {color && <span className="prio-bar" style={{ background: color }} />}
       <div className="title-row">{doneBtn}<div className="card-title">{card.title}</div></div>
       {(desc || progress || block) && (
@@ -26,13 +26,14 @@ export function CardFace({ card, block, doneBtn }) {
           )}
         </div>
       )}
+      {fromName && <span className="from-tag" title="Came from this list">{fromName}</span>}
     </div>
   );
 }
 
 const stop = (e) => e.stopPropagation();
 
-export default function CardTile({ card, block, register, hoveredRef, onOpen, onComplete, isDragSource }) {
+export default function CardTile({ fromName, card, block, register, hoveredRef, onOpen, onComplete, isDragSource }) {
   const [completing, setCompleting] = useState(false);
   const timer = useRef(null);
   const finish = (e) => {
@@ -60,6 +61,7 @@ export default function CardTile({ card, block, register, hoveredRef, onOpen, on
       role="button"
     >
       <CardFace
+        fromName={fromName}
         card={card}
         block={block}
         doneBtn={onComplete && (

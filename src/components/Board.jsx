@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { sortCards, LIST_COLORS, textOn } from '../lib/core.js';
+import { sortCards, LIST_COLORS, textOn, isTodayList } from '../lib/core.js';
 import CardTile from './CardTile.jsx';
 import { Icon } from './Icon.jsx';
 import { confirmDialog, promptDialog } from './Dialog.jsx';
@@ -53,7 +53,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
         defaultColor={defaultColor}
         newCardColor={newCardColor}
         list={list}
-        isFirst={i === 0}
+        isFirst={i === 0 || (i === 1 && isTodayList(lists[0]))}
         isLast={i === lists.length - 1}
         allLists={lists}
         cards={cards}
@@ -127,7 +127,7 @@ export default function Board({ board, lists, defaultColor, addListColor, newCar
             defaultColor={defaultColor}
             newCardColor={newCardColor}
             list={focusList}
-            isFirst={fi === 0}
+            isFirst={fi === 0 || (fi === 1 && isTodayList(lists[0]))}
             isLast={fi === lists.length - 1}
             allLists={lists}
             cards={cards}
@@ -189,7 +189,7 @@ function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor,
   const sectionRef = (el) => { setNodeRef(el); registerList(list.id, el); };
   // The header is the drag handle (turned off while renaming so text can be selected).
   const { setNodeRef: setHandleRef, listeners: handleListeners } = useDraggable({
-    id: `listdrag:${list.id}`, data: { kind: 'list', id: list.id }, disabled: editingName || focused,
+    id: `listdrag:${list.id}`, data: { kind: 'list', id: list.id }, disabled: editingName || focused || isTodayList(list),
   });
 
   const draggingId = drag?.kind === 'card' ? drag.id : null;
@@ -207,6 +207,7 @@ function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor,
       <CardTile
         key={c.id}
         card={c}
+        fromName={isTodayList(list) && c.fromListId ? allLists.find((l) => l.id === c.fromListId)?.name : undefined}
         block={blockByCard.get(c.id)}
         register={register}
         hoveredRef={hoveredRef}
@@ -258,8 +259,8 @@ function ListColumn({ focused, phone, onFocus, list, defaultColor, newCardColor,
               <button onClick={() => { setMenu(false); setComposer(true); }}>Add card</button>
               {!phone && <button onClick={() => { setMenu(false); onFocus(focused ? null : list.id); }}>{focused ? 'Show all lists' : 'Focus on this list'}</button>}
               <button onClick={() => { setMenu(false); setEditingName(true); }}>Rename list</button>
-              <button disabled={isFirst} onClick={() => { setMenu(false); actions.moveList(list, -1, allLists); }}>Move list left</button>
-              <button disabled={isLast} onClick={() => { setMenu(false); actions.moveList(list, 1, allLists); }}>Move list right</button>
+              <button disabled={isFirst || isTodayList(list)} onClick={() => { setMenu(false); actions.moveList(list, -1, allLists); }}>Move list left</button>
+              <button disabled={isLast || isTodayList(list)} onClick={() => { setMenu(false); actions.moveList(list, 1, allLists); }}>Move list right</button>
               <hr />
               <div className="menu-label">Calendar color</div>
               <div className="color-swatches">

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DndContext, DragOverlay, MeasuringStrategy, MouseSensor, TouchSensor, pointerWithin, useSensor, useSensors } from '@dnd-kit/core';
 import { useIsPhone } from './lib/useIsPhone.js';
 import { createActions } from './store/actions.js';
-import { rank, sortCards, todayKey } from './lib/core.js';
+import { rank, sortCards, todayKey, isTodayList, originPatch } from './lib/core.js';
 import { boardToTrello, downloadJson } from './lib/backup.js';
 import { applyTheme, applyPriorityColors, resolveLook } from './lib/themes.js';
 import Header from './components/Header.jsx';
@@ -109,6 +109,12 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
     () => (board ? lists.filter((l) => l.boardId === board.id).sort((a, b) => a.order - b.order) : []),
     [lists, board],
   );
+  // "Today's Priorities" always sits first (next to the calendar): give it the lowest order.
+  useEffect(() => {
+    const today = boardLists.find(isTodayList);
+    if (!today || boardLists[0].id === today.id) return;
+    actions.commitRaw([{ op: 'update', coll: 'lists', id: today.id, data: { order: boardLists[0].order - 1 } }]);
+  }, [boardLists]); // eslint-disable-line react-hooks/exhaustive-deps
   const cardsById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const listsById = useMemo(() => new Map(lists.map((l) => [l.id, l])), [lists]);
   const openCard = openCardId ? cardsById.get(openCardId) : null;
@@ -204,7 +210,8 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
         const r = el.getBoundingClientRect();
         if (pointer.x > r.left + r.width / 2) listIndex++;
       }
-      next.listIndex = listIndex;
+      const hasToday = latest.current.boardLists.some((l) => isTodayList(l) && l.id !== info.id);
+      next.listIndex = hasToday ? Math.max(1, listIndex) : listIndex;
     } else if (over?.type === 'list' && info.kind === 'card') {
       const card = latest.current.cardsById.get(info.id);
       const myRank = rank(card.priority);
@@ -268,9 +275,14 @@ export default function Workspace({ backend, user, onSignOut, demo }) {
           if (band.findIndex((c) => c.id === card.id) === bandIndex) return; // unchanged
         }
         const toBoard = lists.find((l) => l.id === listId)?.boardId;
-        actions.placeCard(card, listId, bandIndex, cards, toBoard);
+        const extra = originPatch(listsById.get(card.listId), listsById.get(listId));
+        actions.placeCard(card, listId, bandIndex, cards, toBoard, extra);
       } else if (t.cal) {
         actions.createBlock(card, date, t.cal.start, t.cal.duration);
+      } else if (card.fromListId && isTodayList(listsById.get(card.listId))) {
+        // Dropped on empty space: send it back to the list it came from.
+        const origin = listsById.get(card.fromListId);
+        if (origin) actions.moveCardTo(card, origin.boardId, origin.id, cards, { fromListId: null });
       }
     } else if (info.kind === 'list') {
       const list = lists.find((l) => l.id === info.id);
