@@ -76,6 +76,7 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
     } : {},
   }) || {};
 
+  const todayList = boardLists(card.boardId).find(isTodayList);
   const inToday = isTodayList(boardLists(card.boardId).find((l) => l.id === card.listId));
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { flushDesc(); onClose(); } }}>
@@ -125,6 +126,25 @@ export default function CardModal({ card, boards, lists, cards, actions, onClose
             )}
           </label>
         </div>
+
+        {todayList && moveBoard === card.boardId && (
+          <label className="today-check">
+            <input
+              type="checkbox"
+              checked={inToday}
+              disabled={inToday && !(card.fromListId && boardLists(card.boardId).some((l) => l.id === card.fromListId))}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  actions.moveCardTo(card, card.boardId, todayList.id, cards, originPatch(boardLists(card.boardId).find((l) => l.id === card.listId), todayList));
+                } else {
+                  actions.moveCardTo(card, card.boardId, card.fromListId, cards, { fromListId: null });
+                }
+              }}
+            />
+            <span>Move to {todayList.name}</span>
+            {inToday && !card.fromListId && <em> (untick returns it to its tagged list, so pick one above first)</em>}
+          </label>
+        )}
 
         <div className="prio-row">
           <span className="section-label">Priority</span>

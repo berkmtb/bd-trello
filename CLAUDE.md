@@ -49,6 +49,7 @@ A personal replacement for Trello (Bruce didn't want to pay for Trello's Planner
 28. **Today's Priorities (special list)**: any list named "Today's Priorities" (`isTodayList` in `core.js`) is forced first (lowest `order`, auto-fixed by a Workspace effect), cannot be dragged/moved, and others cannot move above it. Cards moved into it from another list get `fromListId` (`originPatch`), shown as a tiny tag at the card's bottom-right; moving a card to any other list clears it. Dropping such a card on empty space (not a list, not the calendar) returns it to the origin list (bottom of its band).
 29. **Today text color**: per-board `look.todayTextColor` (Settings → Customize → "Today's Priorities text color"); colors only the Today list title (not its cards) via `--today-text`. Unset = follows the board's default time block color (`resolveLook().todayTextColor`).
 30. **List dropdown in Today**: in the card dialog, for a card in the Today list the List dropdown does NOT move the card; it sets `fromListId` (choosing Today itself clears it). The card leaves Today only by dragging (onto a list, or empty space → origin). Board dropdown still moves across boards.
+31. **Move-to-Today checkbox**: card dialog shows "Move to Today's Priorities" (when the board has that list); ticking moves the card in and tags its origin, unticking returns it to the tagged list (disabled if no tag).
 20. **Small branding choices**: page/tab title is "bd tasks" (`index.html`); the top-bar user avatar (initials) is solid black, no outline (`.avatar` in `styles.css`).
 
 ## Architecture

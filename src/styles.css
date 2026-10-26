@@ -621,3 +621,7 @@ body { overscroll-behavior: none; }
 
 /* Today's Priorities text color (Settings → Customize) */
 .list.today-list .list-name { color: var(--today-text, var(--text-strong)); }
+
+.today-check { display: flex; align-items: center; gap: 8px; margin: 10px 0 2px; font-size: 13px; color: var(--text-strong); cursor: pointer; }
+.today-check input { width: 16px; height: 16px; accent-color: var(--accent-2, #579dff); }
+.today-check em { color: var(--muted); font-style: normal; font-size: 12px; }
